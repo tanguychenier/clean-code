@@ -25,6 +25,10 @@
 * [Les fonctions doivent faire une seule chose](#les-fonctions-doivent-faire-une-seule-chose)
 * [Code smells (mauvaises odeurs de code)](#code-smells-mauvaises-odeurs-de-code)
 * [Catalogue de refactorings essentiels](#catalogue-de-refactorings-essentiels)
+* [Boy Scout Rule en pratique](#boy-scout-rule-en-pratique)
+* [Revue de code : hygiène et fond](#revue-de-code--hygiène-et-fond)
+* [Outillage PHP : du linter au mutation testing](#outillage-php--du-linter-au-mutation-testing)
+* [Quand ne pas appliquer Clean Code](#quand-ne-pas-appliquer-clean-code)
 * [KISS, YAGNI et optimisation prématurée](#kiss-yagni-et-optimisation-prématurée)
 * [Dette technique](#dette-technique)
 * [Pour aller plus loin](#pour-aller-plus-loin)
@@ -99,6 +103,27 @@ Un nom doit révéler l'intention : pourquoi cette variable existe-t-elle, et qu
 
 Les noms courts (`i`, `j`, `n`) restent acceptables pour des indices de boucle locale. Les abréviations consacrées dans le domaine (`url`, `id`, `http`) sont également admises ; elles trompent moins qu'une expansion artificielle (`uniformResourceLocator`).
 
+### Heuristiques tirées des codebases PHP réelles
+
+Les conventions ci-dessous ne sont écrites nulle part dans la PSR mais s'imposent par usage dans Symfony, Laravel, Doctrine, et la plupart des projets PHP modernes.
+
+| Heuristique | Énoncé | Exemple |
+|-------------|--------|---------|
+| **Verbe en tête pour les méthodes** | Une méthode *fait* quelque chose : son nom commence par un verbe d'action. | `calculerTotal()`, `valider()`, `enregistrer()`. |
+| **Substantif pour les variables et propriétés** | Une variable *est* une chose : son nom est un nom commun. | `$client`, `$lignesCommande`, `$dateLivraison`. |
+| **Préfixe booléen** | Un booléen pose une question : `est`, `a`, `peut`, `doit`. | `$estActif`, `aDroitsAdmin`, `peutPublier()`. |
+| **Pluriel = collection** | Un nom au pluriel signale une collection (tableau, `Collection`, `iterable`). | `$utilisateurs`, `$factures`. |
+| **Suffixe métier pour les classes techniques** | Le rôle architectural se devine au suffixe. | `UserRepository`, `OrderController`, `EmailValidator`, `ShippingFactory`. |
+| **`make` / `create` / `new` pour les fabriques** | Distingue les méthodes *fabriques* du reste. | `make()`, `createFromArray()`, `newFromRequest()`. |
+| **`from` / `to` pour les conversions** | Met en valeur la transformation entre formats. | `Email::fromString()`, `$invoice->toArray()`. |
+
+**À éviter en PHP moderne :**
+
+* **Notation hongroise** (`strNom`, `iCount`, `arrLignes`). PHP est typé statiquement (depuis 7.0 sur les arguments, depuis 7.4 sur les propriétés) ; les types sont déjà dans la signature et dans l'IDE. Préfixer le type au nom est du bruit.
+* **Préfixe `m_`** pour les attributs (héritage C++/MFC). Les attributs de classe sont déjà signalés par `$this->` à l'usage.
+* **Suffixe `_obj`** ou `_var`. Tautologie : `$client_obj` est aussi vide d'information que `$la_chose`.
+* **Anglais bricolé** mêlé au français. Choisir une langue par projet, pas par fichier. Le domaine métier en français + termes techniques en anglais (`Repository`, `Controller`) est un compromis fréquent et acceptable.
+
 ### Magic numbers : nommer les littéraux
 
 ```php
@@ -164,6 +189,39 @@ Les API publiques (PHPDoc, JSDoc, docstrings) gagnent à être documentées : le
 > *« Un commentaire est l'aveu qu'on n'a pas su s'exprimer en code. »* — Robert C. Martin
 
 Avant d'écrire un commentaire, essayez : (1) renommer une variable, (2) extraire une fonction au nom signifiant, (3) introduire une constante. Si le besoin de commenter persiste, alors le commentaire est probablement justifié.
+
+### Nuance : la position de Robert C. Martin est contestée
+
+La formule ci-dessus est l'un des conseils les plus repris — et les plus mal appliqués — de *Clean Code*. Il faut la lire dans son contexte : Martin combat les commentaires **redondants** (« incrémente i »), pas les commentaires en général. Des bases de code reconnues pour leur qualité — le **noyau Linux**, **FreeBSD**, **SQLite**, **PostgreSQL** — sont copieusement commentées, et leurs commentaires sont précisément ce qui les rend abordables à un nouvel arrivant.
+
+Un bon commentaire répond à une question que **ni le code ni les tests ne peuvent répondre** :
+
+| Question à laquelle le code ne répond pas | Exemple de commentaire utile |
+|-------------------------------------------|------------------------------|
+| Pourquoi cette valeur ? | `// 511 : taille max d'un nom UTF-8 en NTFS, source MSDN.` |
+| Pourquoi ce contournement ? | `// Workaround : libxml < 2.9 perd l'encodage en cas d'entité.` |
+| Pourquoi cet ordre d'opération ? | `// On purge AVANT d'écrire pour éviter une race avec le worker.` |
+| Pourquoi ne pas utiliser X ? | `// array_unique() est O(n²) ici ; map associative manuelle.` |
+| Quel papier / RFC / ticket ? | `// Cf. RFC 7519 §4.1.4 (exp claim).` |
+
+Ces commentaires **survivent au refactoring** parce qu'ils décrivent une décision, pas une mécanique. Le test à passer : *« si je supprime ce commentaire, est-ce que le prochain mainteneur perdra une demi-journée à reconstruire le contexte ? »* Si oui, gardez-le.
+
+### Commentaires *de section* dans les fonctions longues : un signal, pas une solution
+
+```php
+// À éviter : des commentaires-titres qui découpent une fonction trop longue
+public function traiter(): void
+{
+    // -- Validation --
+    // ... 15 lignes
+    // -- Calcul --
+    // ... 20 lignes
+    // -- Persistance --
+    // ... 10 lignes
+}
+```
+
+Ici les commentaires soulignent un découpage qui mérite des **fonctions** (`valider()`, `calculer()`, `enregistrer()`). Le commentaire est alors le symptôme, pas le remède.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
@@ -348,6 +406,25 @@ Exception traditionnelle : `pop()` sur une pile. Les exceptions doivent rester r
 
 Découper une fonction de cinq lignes triviales en cinq fonctions d'une ligne nuit à la lisibilité. La règle est *un niveau d'abstraction*, pas *un nombre maximal de lignes*.
 
+### Les seuils chiffrés : heuristiques, pas dogmes
+
+Robert C. Martin propose des fonctions « de quelques lignes ». Sandi Metz, dans ses conférences chez RailsConf, propose des seuils plus détaillés — qu'elle qualifie elle-même d'**heuristiques de relecture**, pas de lois :
+
+| Élément | Seuil Sandi Metz | Lecture |
+|---------|------------------|---------|
+| Lignes par méthode | ≤ 5 | Au-delà, se demander s'il y a deux responsabilités. |
+| Lignes par classe | ≤ 100 | Au-delà, chercher une *Extract Class*. |
+| Arguments par méthode | ≤ 4 | Au-delà, *Introduce Parameter Object*. |
+| Variables d'instance utilisées par action de contrôleur | 1 | Garde le contrôleur fin. |
+
+Ces chiffres sont **des indicateurs de relecture**, à appliquer avec discernement. Une méthode de 8 lignes parfaitement claire est meilleure qu'une méthode de 4 lignes qui appelle deux helpers triviaux. Le critère final reste : *un lecteur étranger comprend-il sans effort ?* Les chiffres aident à se poser la question, pas à y répondre.
+
+Cas où la règle « courte » s'efface :
+
+* **Boucles principales** d'orchestration (un *use case* qui enchaîne 7 étapes claires peut faire 30 lignes lisibles, mieux qu'éclaté en 7 méthodes privées d'une ligne chacune).
+* **Constructeurs de validation** d'un Value Object qui vérifie 5 invariants — séquence linéaire, sans abstraction utile à extraire.
+* **`match` exhaustif** sur un enum métier : la longueur traduit la richesse du domaine, pas un défaut.
+
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Respect des conventions de codage
@@ -418,6 +495,34 @@ function emailValide(?string $email): bool
 ### Attention à la fausse duplication
 
 Deux blocs qui se ressemblent aujourd'hui mais évoluent pour des raisons différentes ne sont pas une duplication — les fusionner crée un couplage accidentel. Avant d'extraire, vérifiez que les deux occurrences décrivent bien la **même règle métier**.
+
+### « Duplication coûte moins cher que la mauvaise abstraction »
+
+Sandi Metz a popularisé cette idée à RailsConf 2014, sous le nom de **AHA principle** (*Avoid Hasty Abstractions*) repris ensuite par Kent C. Dodds. Le raisonnement :
+
+1. Un développeur voit deux blocs qui se ressemblent et les fusionne dans une fonction commune.
+2. Plus tard, l'un des deux contextes change. Le développeur ajoute un paramètre, un `if`, un drapeau booléen.
+3. Trois mois après, la fonction « factorisée » contient cinq paramètres, deux modes incompatibles, et personne n'ose la toucher.
+4. Le coût total dépasse largement celui de la duplication initiale.
+
+**Règle pratique : la règle des trois (*Rule of Three*).** Wait until you have **three** examples before extracting an abstraction. Avec seulement deux occurrences, on ne sait pas encore ce qui varie ni ce qui reste constant. Avec trois, l'axe de variation est généralement clair.
+
+```php
+// À l'arrivée du 2e cas : on duplique sans culpabilité.
+public function exporterFactures(): string { /* ... 12 lignes propres */ }
+public function exporterDevis():    string { /* ... 12 lignes propres, qui ressemblent mais... */ }
+
+// Au 3e cas (avoirs), on voit l'invariant : c'est une exportation CSV de documents commerciaux.
+// On peut alors extraire un ExportateurDocumentsCommerciaux avec une bonne abstraction.
+```
+
+### Duplication accidentelle vs duplication essentielle
+
+| Type | Exemple | Action |
+|------|---------|--------|
+| **Accidentelle** (même règle, plusieurs copies) | Validation d'email recopiée dans 4 contrôleurs. | Extraire (DRY justifié). |
+| **Essentielle** (règles distinctes qui se ressemblent) | Calcul de TVA et calcul de commission, tous deux `montant * taux`. | Garder séparé : ils évolueront indépendamment. |
+| **De convergence** (deux règles qui sont *en train* de se rejoindre) | Deux exports CSV qui supportent peu à peu les mêmes colonnes. | Attendre la stabilisation, puis extraire. |
 
 [🔝 Retour en haut de page](#table-des-matières)
 
@@ -699,6 +804,19 @@ public function total(): int
 }
 ```
 
+### TDD n'est pas obligatoirement *test-first*
+
+La présentation classique de TDD impose le test **avant** le code. C'est efficace pour explorer une API depuis le point de vue de l'utilisateur, et pour cadrer une fonctionnalité encore floue. Mais Kent Beck lui-même a depuis nuancé son propos : la valeur de TDD est dans la **boucle courte de feedback**, pas dans l'ordre des frappes au clavier.
+
+| Approche | Quand l'employer | Limites |
+|----------|------------------|---------|
+| **Test-first strict** | Comportement nouveau, API à concevoir, bug à reproduire avant correction. | Inutilement lourd pour une exploration ou un *spike* jetable. |
+| **Test-after immédiat** | Code écrit en mode exploratoire (REPL, prototype), figé en production via tests rétroactifs **avant** le commit. | Risque d'écrire des tests qui ne testent que ce que le code fait déjà — penser à *tester l'intention*. |
+| **Test-after de refactoring** | Avant de refactorer une zone non couverte : on **caractérise** d'abord avec des *characterization tests* (Michael Feathers, *Working Effectively with Legacy Code*), puis on refactore. | Les tests de caractérisation gèlent le comportement actuel, bugs compris. À nettoyer dans un second temps. |
+| **Aucun test** | Script de migration unique, *one-shot* d'analyse, code de présentation. | Ne pas se mentir : si le script tourne deux fois, il vit, et il finira en prod sans test. |
+
+L'important n'est pas la chronologie mais la **discipline du filet** : aucune modification ne traverse la frontière sans que **quelque chose** vérifie qu'elle ne casse rien. Test-first amène cette discipline plus naturellement, mais ce n'est pas la seule voie.
+
 ### Test smells (mauvaises odeurs côté tests)
 
 | Smell | Symptôme | Remède |
@@ -973,6 +1091,10 @@ Un *code smell* est un signal visuel qu'un morceau de code mérite probablement 
 | **Magic number** | Nombre magique | Littéral inscrit dans le code sans nom. | *Replace Magic Number with Symbolic Constant*. |
 | **God object** | Objet-Dieu | Une classe « sait tout, fait tout ». | Découper en collaborateurs cohésifs. |
 | **Train wreck** | Train d'appels | `$a->b()->c()->d()->e()`. | Demander à l'objet ce qu'on veut (Tell, Don't Ask), respecter la loi de Déméter. |
+| **Inappropriate intimacy** | Intimité inappropriée | Deux classes connaissent mutuellement leurs détails internes (attributs `protected` partagés, `friend`, *getters/setters* en cascade). | *Move Method*, *Move Field*, ou inversion de dépendance via interface. |
+| **Refused bequest** | Héritage refusé | Une sous-classe hérite d'une superclasse mais désactive ou ignore la moitié de son contrat. | Remplacer l'héritage par la composition (*Replace Inheritance with Delegation*). |
+| **Middle man** | Intermédiaire inutile | Une classe ne fait que déléguer chacune de ses méthodes à un attribut. | *Remove Middle Man* : laisser l'appelant accéder directement, ou fusionner. |
+| **Temporary field** | Champ temporaire | Un attribut n'a une valeur sensée que pendant une partie du cycle de vie. | *Extract Class* (les champs corrélés vivent ensemble) ou variable locale. |
 
 ### Exemple : *Primitive Obsession* en PHP
 
@@ -1109,12 +1231,281 @@ Le refactoring inverse de l'extraction. Si une fonction n'apporte plus rien (un 
 
 Si une méthode de `A` accède plus aux attributs de `B` que de `A` (*feature envy*), on la déplace dans `B`. La cohésion remonte, le couplage baisse.
 
+### Replace Constructor with Factory Method
+
+Le constructeur a deux limites : son nom est imposé (le nom de la classe), et il renvoie nécessairement une instance de **cette** classe — jamais d'une sous-classe ou d'un cache. Une méthode fabrique nommée résout les deux.
+
+```php
+// Avant : un seul constructeur, validation mêlée à la construction, pas de variantes
+final class Email
+{
+    public function __construct(public readonly string $valeur)
+    {
+        if (! filter_var($valeur, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Email invalide");
+        }
+    }
+}
+
+// Après : constructeur privé, fabriques nommées qui décrivent l'intention
+final class Email
+{
+    private function __construct(public readonly string $valeur) {}
+
+    public static function depuisChaine(string $valeur): self
+    {
+        if (! filter_var($valeur, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Email invalide");
+        }
+        return new self(strtolower(trim($valeur)));
+    }
+
+    public static function depuisChaineSanitisee(string $valeurDejaValidee): self
+    {
+        // Pour les flux de données déjà filtrées (BDD, file de messages).
+        return new self($valeurDejaValidee);
+    }
+}
+```
+
+Avantages : noms parlants (`Email::depuisChaine($s)` se lit mieux que `new Email($s)`), retour polymorphe possible (cache, sous-classe), tests plus expressifs (`Email::pourLesTests()`).
+
+### Replace Inheritance with Delegation
+
+L'héritage est un mécanisme de **réutilisation** simple, mais il fige une relation forte (« est un ») et expose toute la surface du parent à l'enfant. Quand la relation est en réalité « utilise un » ou « possède un », la délégation est plus souple.
+
+```php
+// Avant : héritage abusif. Une PileSansDoublon n'EST PAS un ArrayObject ;
+// elle l'utilise. Hériter expose les méthodes (count, append, offsetSet)
+// qui peuvent violer l'invariant "pas de doublon".
+final class PileSansDoublon extends ArrayObject
+{
+    public function pousser(mixed $element): void
+    {
+        if (! in_array($element, (array) $this, true)) {
+            $this->append($element);
+        }
+    }
+    // ... mais l'utilisateur peut toujours appeler $pile[42] = 'doublon' !
+}
+
+// Après : composition. La pile EXPOSE seulement ce qu'elle promet.
+final class PileSansDoublon
+{
+    private array $elements = [];
+
+    public function pousser(mixed $element): void
+    {
+        if (! in_array($element, $this->elements, true)) {
+            $this->elements[] = $element;
+        }
+    }
+
+    public function depiler(): mixed   { return array_pop($this->elements); }
+    public function taille(): int      { return count($this->elements); }
+}
+```
+
+Heuristique : préférez l'**héritage** quand la relation est *vraiment* un sous-typage substituable (Liskov), et la **délégation** dans tous les autres cas. *Favor composition over inheritance* (Gang of Four, 1994) reste l'un des conseils les plus rentables.
+
+### Replace Exception with Specialized Type
+
+Une exception de type `Exception` ou `RuntimeException` ne dit rien à l'appelant. Un type métier (`UtilisateurIntrouvable`, `SoldeInsuffisant`, `TokenExpire`) permet un `catch` ciblé et auto-documente le code.
+
 ### Discipline du refactoring
 
 1. **Filet de sécurité** : aucun refactoring sans tests automatisés sur la zone touchée.
 2. **Petits pas** : commit après chaque transformation atomique. Si un commit casse, le retour en arrière est trivial.
 3. **Une chose à la fois** : ne pas refactoriser et ajouter une fonctionnalité dans le même commit. *Refactor first, then add feature.* (Kent Beck.)
 4. **Outillage** : laissez l'IDE faire les refactorings mécaniques (renommage, extraction). L'erreur humaine est plus probable que l'erreur de l'outil.
+
+[🔝 Retour en haut de page](#table-des-matières)
+
+## Boy Scout Rule en pratique
+
+> *« Laissez le campement plus propre que vous ne l'avez trouvé. »* — Robert C. Martin
+
+La règle est facile à citer, plus délicate à appliquer sans **dérive de périmètre** (*scope creep*). Une PR de correction de bug qui touche 40 fichiers parce que « tant qu'on y est… » devient inrelisable, retarde la correction urgente, et masque le vrai changement.
+
+### Le découpage qui marche
+
+| Type de changement | Où le mettre |
+|--------------------|--------------|
+| Le **fix** (bug ou feature minimale) | Commit dédié, le plus petit possible. C'est le commit qu'on saura cherry-picker en hotfix. |
+| Le **refactoring exposé par le fix** (renommage, extraction qui clarifie) | Commit séparé, **avant** ou **après** le fix selon que la nouvelle forme aide à comprendre le bug. |
+| Le **nettoyage opportuniste** (commentaire mort, indentation incohérente, import inutilisé) | Commit séparé, ou PR distincte si le bruit dilue le diff. |
+| Les **idées de refactoring** repérées mais non urgentes | Ticket / TODO daté avec owner, **pas** dans la PR courante. |
+
+### Heuristique « 30 secondes » de Martin Fowler
+
+Avant de partir d'un fichier, on s'autorise jusqu'à **trente secondes** de nettoyage : renommer une variable mal nommée qui a sauté aux yeux, supprimer un `var_dump` oublié, factoriser deux lignes répétées. Au-delà, on note l'idée et on revient avec une PR dédiée.
+
+```php
+// Avant le fix du bug "âge négatif accepté"
+public function setAge(int $a): void  // mauvais nom de paramètre
+{
+    $this->age = $a;
+}
+
+// PR du fix : on profite pour le 30s-cleanup, mais pas plus.
+public function setAge(int $age): void
+{
+    if ($age < 0) {
+        throw new InvalidArgumentException('Âge négatif');
+    }
+    $this->age = $age;
+}
+```
+
+On n'a *pas* renommé `setAge` en `definirAge`, ni transformé `int` en `Age` Value Object : ce serait un autre changement, dans une autre PR, avec une autre justification.
+
+### Refactor first, then add feature
+
+Kent Beck l'a formalisé : *« For each desired change, make the change easy (warning: this may be hard), then make the easy change. »* Concrètement, en deux PR successives :
+
+1. **PR refactoring** : on prépare le terrain. Tests verts avant, tests verts après. Aucun comportement nouveau. Diff orienté *structure*.
+2. **PR feature** : la fonctionnalité s'écrit en quelques lignes parce que la PR précédente a aplani la route. Diff orienté *intention*.
+
+Cette séquence rend les revues plus rapides (chaque revueur sait ce qu'il regarde) et l'historique plus utile (un `git log` raconte les évolutions).
+
+[🔝 Retour en haut de page](#table-des-matières)
+
+## Revue de code : hygiène et fond
+
+Une revue de code (*code review*) sert à **diffuser la connaissance** et à **détecter les défauts d'intention**. Trop souvent elle dégénère en débat de ponctuation. Quelques règles tirées des écrits de Michael Lynch, Gergely Orosz et de la culture Google.
+
+### Ce qu'une revue doit chercher (par ordre de priorité)
+
+1. **L'intention est-elle juste ?** Le changement résout-il bien le problème énoncé ? Cas-limites couverts ?
+2. **L'architecture est-elle saine ?** Le code se trouve-t-il à la bonne couche ? La dépendance va-t-elle dans le bon sens ?
+3. **Les tests prouvent-ils ce qu'ils prétendent prouver ?** Une suite verte qui n'assertionne rien ne vaut rien.
+4. **La lisibilité est-elle suffisante ?** Un nouveau venu comprendra-t-il dans six mois ?
+5. **Les détails de style.** En dernier, et idéalement délégués au linter.
+
+Inverser cet ordre — discuter d'abord de l'emplacement d'une accolade — est l'erreur la plus fréquente. Le linter règle la forme ; l'humain règle le fond.
+
+### Hygiène : ce qui rend une revue supportable
+
+| Mauvaise pratique | Symptôme | Remède |
+|--------------------|----------|--------|
+| **Pile de nitpicks** | 30 commentaires sur des renommages, un seul sur l'archi. | Préfixer les remarques mineures par `nit:` (les indiquer comme optionnelles). Automatiser le reste. |
+| **Commentaire ambigu** | « Ce n'est pas terrible. » | Toujours dire **pourquoi** et **proposer** : « Ici, deux responsabilités ; extraire un `Validator` ? » |
+| **Aller-retour sans fin** | La PR vit deux semaines, le contexte s'efface. | Mettre une **borne** : 2 cycles de revue, puis appel ou *pair review* en synchrone. |
+| **Bikeshedding** | Discussion infinie sur le nom d'une variable triviale. | Auteur tranche, revue lève la main si elle change d'avis sous 24 h. |
+| **Revue tardive** | La PR fait 2000 lignes ; la revue devient symbolique. | Limiter à **400 lignes** par PR (étude SmartBear). Au-delà, scinder. |
+| **Revue par autorité** | Le senior impose son avis sans justification. | Toute remarque doit s'argumenter. *Strong opinions, weakly held.* |
+
+### Le langage des commentaires de revue
+
+Le ton compte autant que le contenu. Quelques préfixes utilisés chez Google, Microsoft, Stripe :
+
+| Préfixe | Sens |
+|---------|------|
+| `nit:` | Détail mineur, l'auteur peut ignorer sans justifier. |
+| `question:` | Demande de clarification, pas une demande de changement. |
+| `suggestion:` | Idée alternative, à débattre. |
+| `blocking:` | Doit être traité avant merge (correction de bug, faille, contrat cassé). |
+| `praise:` | Compliment explicite. **Important :** une revue qui ne sait que critiquer démotive. |
+
+### Ce qui n'est pas de la revue de code
+
+* Un **chantier d'architecture** se discute ailleurs (ADR, RFC interne, design doc).
+* Un **différend de style** se règle dans la configuration du linter, pas dans la PR.
+* Un **désaccord profond** se traite en synchrone (5 minutes de visio valent 50 messages).
+
+[🔝 Retour en haut de page](#table-des-matières)
+
+## Outillage PHP : du linter au mutation testing
+
+Aucun de ces outils ne remplace la rigueur humaine. Tous l'amplifient en transformant des règles écrites en vérifications automatiques et reproductibles.
+
+### Pyramide d'outillage
+
+| Niveau | Outil | Ce qu'il garantit | Coût d'intégration |
+|--------|-------|-------------------|--------------------|
+| 1. Style | [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer), [PHP_CodeSniffer](https://github.com/PHPCSStandards/PHP_CodeSniffer) | Conformité PSR-12, cohérence stylistique. | Faible. À brancher en pré-commit. |
+| 2. Statique de typage | [PHPStan](https://phpstan.org/), [Psalm](https://psalm.dev/) | Types corrects, branches mortes, *null* non géré, tableaux mal indexés. | Moyen. Démarrer au niveau 0, monter palier par palier. |
+| 3. Refactoring automatisé | [Rector](https://getrector.com/) | Migration de versions PHP, application en masse de patterns (constructeurs promus, `readonly`, *final*, etc.). | Moyen. Indispensable pour les vieux projets. |
+| 4. Complexité et architecture | [PHPMD](https://phpmd.org/), [Deptrac](https://github.com/qossmic/deptrac), [PhpMetrics](https://phpmetrics.org/) | Complexité cyclomatique, dépendances inter-modules, cohésion. | Moyen. Surtout pour cadrer une équipe. |
+| 5. Couverture | [PHPUnit](https://phpunit.de/) `--coverage` | Lignes / branches exécutées par les tests. | Faible. Ne dit **pas** si les assertions sont pertinentes. |
+| 6. Mutation testing | [Infection](https://infection.github.io/) | Modifie volontairement le code et vérifie que les tests détectent. Mesure la *qualité* des tests, pas leur quantité. | Élevé. Lent, mais révélateur sur les zones critiques. |
+| 7. Sécurité | [composer audit](https://getcomposer.org/), [Roave Security Advisories](https://github.com/Roave/SecurityAdvisories) | Détection des CVE dans les dépendances. | Très faible. Aucun prétexte. |
+
+### Exemple de pipeline minimal en CI
+
+```yaml
+# .github/workflows/ci.yml — squelette représentatif
+jobs:
+  qualite:
+    steps:
+      - run: composer install --no-progress
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+      - run: vendor/bin/phpstan analyse --level=8
+      - run: vendor/bin/phpunit --coverage-text
+      - run: composer audit
+      # Mutation testing : seulement sur la branche principale (lent)
+      # - run: vendor/bin/infection --min-msi=70
+```
+
+### Lecture critique : les pièges classiques
+
+* **PHPStan niveau 8 du jour 1 sur une codebase héritée** = mur infranchissable. Mieux : commencer au niveau 0, ne jamais régresser, monter d'un cran par sprint.
+* **100 % de couverture** ne signifie pas 100 % de comportements vérifiés. Une assertion faible sur du code couvert masque un bug. *Coverage* est un *minimum nécessaire*, jamais un objectif suffisant.
+* **Rector appliqué sans tests** est un terrain de mines. C'est l'outil qui justifie le plus d'écrire des tests **avant** de l'utiliser.
+* **Linter trop strict** (200 règles activées) finit ignoré. Démarrer minimal, ajouter une règle quand l'équipe la juge utile.
+
+### Value Objects : un cas pratique d'application
+
+L'**obsession des primitifs** (smell `Primitive Obsession`) se règle outillée : un Value Object par concept métier qui mérite une invariante.
+
+| Concept | Type primitif | Value Object | Invariants encapsulés |
+|---------|---------------|--------------|------------------------|
+| Adresse mail | `string` | `Email` | Format RFC, casse normalisée. |
+| IBAN | `string` | `Iban` | Longueur par pays, *checksum* MOD-97. |
+| Montant | `float` | `Money` | Précision, devise, arithmétique sans erreur d'arrondi. |
+| Identifiant produit | `string` | `Sku` | Pattern domaine (`AAA-000-X`). |
+| Coordonnée | `float` × 2 | `LatLng` | Latitude ∈ [−90, 90], longitude ∈ [−180, 180]. |
+| Date métier | `DateTimeImmutable` | `JourOuvre`, `Echeance` | Pas de week-end, pas de jour férié. |
+
+Bénéfice : la connaissance se concentre dans le type, **toute fonction qui en reçoit un peut le présupposer valide**. Les contrôleurs maigrissent, le domaine s'enrichit.
+
+[🔝 Retour en haut de page](#table-des-matières)
+
+## Quand ne pas appliquer Clean Code
+
+*Clean Code* est un investissement : on paie un coût aujourd'hui (réflexion, abstractions, tests) pour économiser demain (maintenance, évolutions). L'investissement n'a de sens que si **demain existe**. Voici les cas où l'appliquer rigoureusement est un mauvais calcul.
+
+### Code par essence éphémère
+
+| Contexte | Pourquoi assouplir |
+|----------|--------------------|
+| **Spike technique** (étude de faisabilité) | Le but est de répondre *oui/non* le plus vite possible ; le code finit à la poubelle. |
+| **Script de migration unique** | Tournera une fois en prod, sera supprimé. Surinvestir est gaspillé. |
+| **Notebook de data analysis** | Le livrable est l'analyse, pas le code. Lisibilité linéaire suffit. |
+| **POC démo** pour une présentation client | La démo dure 20 minutes ; ce qui compte est le rendu. |
+| **Code de concours / katas** | Optimiser pour la performance ou la concision, pas pour l'évolutivité. |
+
+**Piège classique :** un *spike* qu'on garde « juste pour cette fois ». La règle : si un code éphémère survit à sa raison d'être, ou s'il atterrit sur la branche principale, il **redevient** soumis aux exigences Clean Code, et il faut le refactoriser ou le réécrire.
+
+### Code dont la lisibilité serait contre-productive
+
+* **Hot-path optimisé** : une boucle critique mesurée comme goulot peut justifier une forme moins lisible — `for` plutôt que `foreach` + `array_map`, mémoïsation manuelle, accès direct à un attribut. Le commentaire devient indispensable : il explique *pourquoi* on a sacrifié la lisibilité (et idéalement, le bench qui le justifie).
+* **Algorithmes mathématiques** : une transformée de Fourier rapide ou un produit matriciel SIMD a une forme contrainte par les performances. Imposer des fonctions de 5 lignes y casse le regroupement logique. La lisibilité passe par les **commentaires** et les **références aux papiers**, pas par l'extraction.
+* **Code généré** (parser, ORM, gRPC, OpenAPI) : ne pas le toucher à la main. Les conventions Clean Code ne s'y appliquent pas — la source de vérité est ailleurs.
+
+### Code « assez bon » dans un contexte de contrainte
+
+Une équipe sous-staffée, un *deadline* contractuel, une startup en *pre-revenue* qui doit prouver l'idée avant la qualité. Dans ces contextes, **livrer un produit moyennement propre** vaut mieux que **ne pas livrer un produit parfait**. La dette est consciente, datée, et fait l'objet d'un ticket de remboursement. C'est le quadrant **prudent + délibéré** de la matrice Fowler (voir [Dette technique](#dette-technique)).
+
+### Le test ultime
+
+Avant de plaider l'exception, se poser trois questions :
+
+1. **Combien de fois** ce code sera-t-il lu ? (Pas écrit, *lu*.)
+2. **Combien de personnes** différentes le maintiendront-elles ?
+3. **Quelle est la durée de vie raisonnable** du logiciel auquel il appartient ?
+
+Si les trois réponses pointent vers « peu », assouplir est légitime. Si l'une seulement pointe vers « beaucoup », appliquer Clean Code reste rentable. Et si on hésite, c'est généralement que l'investissement est rentable — l'incertitude joue contre le code sale.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
