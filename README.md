@@ -37,9 +37,13 @@
 
 Le terme *Clean Code* (« code propre ») a été popularisé par [Robert C. Martin](https://fr.wikipedia.org/wiki/Robert_C._Martin) dans son livre *Clean Code: A Handbook of Agile Software Craftsmanship* (2008). Il regroupe un ensemble de pratiques qui rendent le code plus lisible, plus facile à modifier et moins coûteux à maintenir.
 
-Un code est dit *propre* lorsqu'un développeur autre que son auteur peut le lire, le comprendre et le faire évoluer sans avoir à mener l'enquête. Ce dépôt présente les pratiques qui contribuent à cet objectif, illustrées par des exemples en PHP.
+Un code est dit *propre* lorsqu'un développeur autre que son auteur peut le lire, le comprendre et le faire évoluer sans avoir à mener l'enquête. Les exemples qui suivent sont écrits en PHP, mais les principes valent pour tout langage.
 
-> *« La règle du boy scout : laissez le campement plus propre que vous ne l'avez trouvé. »* — Robert C. Martin
+> **Que veut dire « PHP » ?** *PHP* (à l'origine *Personal Home Page*, aujourd'hui *PHP: Hypertext Preprocessor*) est un langage de programmation très répandu pour construire des sites et des applications web côté serveur (la partie qui tourne sur la machine qui héberge le site, par opposition à ce qui tourne dans le navigateur). En PHP, le signe `$` placé devant un mot signale une **variable**, c'est-à-dire une boîte qui contient une valeur. Quand vous lisez `$age` dans un bloc de code, lisez « la variable nommée age » : ce n'est pas une formule de mathématiques.
+
+> **Que veut dire « maintenir » du code ?** *Maintenir* un logiciel, c'est continuer à le faire vivre après sa première écriture : corriger des bugs, ajouter des fonctionnalités, l'adapter à de nouveaux besoins. Pensez à l'entretien d'une maison : on n'arrête pas de s'en occuper une fois construite. La plupart du coût d'un logiciel se trouve dans cette phase d'entretien, pas dans l'écriture initiale ; voilà pourquoi la lisibilité compte autant.
+
+> *« La règle du boy scout : laissez le campement plus propre que vous ne l'avez trouvé. »* (Robert C. Martin)
 >
 > Appliquée au code, cette règle pousse à améliorer un peu chaque fichier que l'on touche, plutôt que d'attendre une refonte hypothétique.
 
@@ -47,7 +51,7 @@ Un code est dit *propre* lorsqu'un développeur autre que son auteur peut le lir
 
 ## Glossaire
 
-Ce vocabulaire revient dans tout le document. Le lire en premier évite d'y revenir à chaque chapitre.
+Le vocabulaire ci-dessous revient à plusieurs endroits. Chaque terme est aussi réexpliqué, avec une analogie, à sa première apparition dans le texte. Le tableau sert d'aide-mémoire auquel revenir au besoin.
 
 | Terme | Définition courte | Pourquoi c'est utile |
 |-------|-------------------|----------------------|
@@ -56,7 +60,7 @@ Ce vocabulaire revient dans tout le document. Le lire en premier évite d'y reve
 | **Couplage** | Mesure de la dépendance entre deux modules. Faible couplage = bon signe. | Moins deux modules se connaissent, plus on peut les modifier indépendamment. |
 | **Magic number** (nombre magique) | Valeur littérale (`30`, `0.2`, `0.07`) inscrite dans le code sans nom ni explication. | Les remplacer par une constante nommée (`DELAI_PURGE_JOURS`, `TAUX_TVA`) rend l'intention explicite. |
 | **Code smell** (mauvaise odeur de code) | Indice visuel qu'une portion de code mériterait un refactoring. Une *odeur* n'est pas un bug : c'est un signal. | Catalogue popularisé par Martin Fowler et Kent Beck dans *Refactoring*. |
-| **Refactoring** (refactorisation) | Transformation **sans changement de comportement** observable, qui améliore la structure interne. | Permet d'améliorer la lisibilité ou la conception sans risque fonctionnel — à condition d'avoir des tests. |
+| **Refactoring** (refactorisation) | Transformation **sans changement de comportement** observable, qui améliore la structure interne. | Permet d'améliorer la lisibilité ou la conception sans risque fonctionnel, à condition d'avoir des tests. |
 | **DRY** (*Don't Repeat Yourself*) | Une règle ou une connaissance ne doit avoir qu'une seule source faisant autorité dans le système. | Évite la dérive entre copies et la duplication de la maintenance. |
 | **KISS** (*Keep It Simple, Stupid*) | Préférer la solution la plus simple qui répond au besoin **actuel**. | La complexité gratuite est de la dette qui ne rend rien. |
 | **YAGNI** (*You Aren't Gonna Need It*) | Ne pas implémenter ce dont on n'a **pas encore** besoin. | Évite le code mort, les options non testées, les chemins jamais empruntés. |
@@ -66,7 +70,7 @@ Ce vocabulaire revient dans tout le document. Le lire en premier évite d'y reve
 | **Polymorphisme** | Capacité, pour différentes classes partageant la même interface, de répondre à un même appel par leur propre comportement. | Remplace les longues cascades `if/else` ou `switch` par une dispatch implicite. |
 | **Effet de bord** (*side effect*) | Toute action d'une fonction au-delà du retour de sa valeur : écrire un fichier, modifier un attribut, journaliser, envoyer un mail. | Les effets de bord rendent les fonctions difficiles à tester et à raisonner ; à isoler. |
 | **Fonction pure** | Fonction sans effet de bord dont le résultat ne dépend que des arguments. Mêmes entrées = mêmes sorties. | Trivialement testable, mémoïsable, parallélisable. |
-| **Loi de Déméter** | « Ne parle qu'à tes amis directs. » Un objet ne doit pas naviguer dans la structure interne d'un autre via des chaînes `a.b.c.d`. | Réduit le couplage et la fragilité aux changements internes. |
+| **Loi de Déméter** | « Ne parler qu'à ses amis directs. » Un objet ne doit pas naviguer dans la structure interne d'un autre via des chaînes `a.b.c.d`. | Réduit le couplage et la fragilité aux changements internes. |
 | **Tell, Don't Ask** | Plutôt qu'**interroger** un objet pour décider à sa place, **lui dire** quoi faire. | Concentre le comportement dans l'objet qui détient les données. |
 | **CQS** (*Command-Query Separation*) | Une méthode est soit une **commande** (effet, retour `void`) soit une **requête** (lecture sans effet). Pas les deux. | Évite les surprises (« lire change l'état »). |
 | **Clause de garde** (*guard clause*) | `if (...) return;` ou `throw` placé en début de fonction pour éliminer un cas particulier. | Aplanit l'imbrication, met le cas nominal au premier niveau. |
@@ -103,9 +107,15 @@ Un nom doit révéler l'intention : pourquoi cette variable existe-t-elle, et qu
 
 Les noms courts (`i`, `j`, `n`) restent acceptables pour des indices de boucle locale. Les abréviations consacrées dans le domaine (`url`, `id`, `http`) sont également admises ; elles trompent moins qu'une expansion artificielle (`uniformResourceLocator`).
 
-### Heuristiques tirées des codebases PHP réelles
+### Heuristiques tirées des bases de code PHP réelles
 
-Les conventions ci-dessous ne sont écrites nulle part dans la PSR mais s'imposent par usage dans Symfony, Laravel, Doctrine, et la plupart des projets PHP modernes.
+> **Que veut dire « heuristique » ?** Une *heuristique* est une règle approximative, tirée de l'expérience, qui marche dans la plupart des cas sans être une loi absolue. « Si une fonction dépasse l'écran, elle fait sans doute trop de choses » est une heuristique : un bon indice à vérifier, pas une vérité mécanique. Pensez au dicton « ciel rouge le soir, beau temps en perspective » : souvent vrai, pas garanti.
+
+> **Que veut dire « PSR » ?** *PSR* signifie *PHP Standard Recommendation* (« recommandation standard PHP »). Ce sont des règles communes, publiées par un groupe de mainteneurs de projets PHP (le PHP-FIG), pour que tout le monde écrive le code de la même façon : nommage, indentation, organisation des fichiers. Numérotées (PSR-1, PSR-4, PSR-12...), elles jouent le rôle d'un code de la route partagé : chacun roule du même côté, donc tout le monde se comprend.
+
+> **Que veut dire « Symfony », « Laravel », « Doctrine » ?** Ce sont des bibliothèques PHP très répandues. *Symfony* et *Laravel* sont des **frameworks** (des squelettes prêts à l'emploi qui fournissent l'ossature d'une application web, pour éviter de tout réécrire). *Doctrine* est un **ORM**, un outil qui fait le pont entre les objets du code et les tables d'une base de données.
+
+Les conventions ci-dessous ne sont écrites nulle part dans les PSR mais s'imposent par usage dans Symfony, Laravel, Doctrine, et la plupart des projets PHP modernes.
 
 | Heuristique | Énoncé | Exemple |
 |-------------|--------|---------|
@@ -117,9 +127,13 @@ Les conventions ci-dessous ne sont écrites nulle part dans la PSR mais s'impose
 | **`make` / `create` / `new` pour les fabriques** | Distingue les méthodes *fabriques* du reste. | `make()`, `createFromArray()`, `newFromRequest()`. |
 | **`from` / `to` pour les conversions** | Met en valeur la transformation entre formats. | `Email::fromString()`, `$invoice->toArray()`. |
 
+> **Que veut dire « notation hongroise » ?** C'est une vieille habitude qui consiste à coller au nom d'une variable une abréviation de son type : `strNom` pour une chaîne (*string*), `iCount` pour un entier (*integer*), `arrLignes` pour un tableau (*array*). Elle vient d'une époque où les éditeurs n'affichaient pas le type. Aujourd'hui l'éditeur le montre tout seul, donc cette notation ne fait qu'ajouter du bruit : si le type change, le nom ment.
+
 **À éviter en PHP moderne :**
 
 * **Notation hongroise** (`strNom`, `iCount`, `arrLignes`). PHP est typé statiquement (depuis 7.0 sur les arguments, depuis 7.4 sur les propriétés) ; les types sont déjà dans la signature et dans l'IDE. Préfixer le type au nom est du bruit.
+
+> **Que veut dire « IDE » et « typé statiquement » ?** Un *IDE* (*Integrated Development Environment*, « environnement de développement intégré ») est l'éditeur évolué dans lequel on écrit le code : il complète les noms, signale les erreurs au survol, et affiche le type des variables. *Typé statiquement* signifie que l'on déclare à l'avance la nature de chaque donnée (texte, entier, etc.) et que des outils vérifient la cohérence avant même l'exécution, ce qui attrape beaucoup d'erreurs tôt. Puisque l'IDE montre déjà le type, le répéter dans le nom est inutile.
 * **Préfixe `m_`** pour les attributs (héritage C++/MFC). Les attributs de classe sont déjà signalés par `$this->` à l'usage.
 * **Suffixe `_obj`** ou `_var`. Tautologie : `$client_obj` est aussi vide d'information que `$la_chose`.
 * **Anglais bricolé** mêlé au français. Choisir une langue par projet, pas par fichier. Le domaine métier en français + termes techniques en anglais (`Repository`, `Controller`) est un compromis fréquent et acceptable.
@@ -172,27 +186,37 @@ if ($user->estAdministrateur()) { ... }
 const DELAI_PURGE_JOURS = 30;
 ```
 
+> **Que veut dire « RGPD » ?** *RGPD* signifie *Règlement général sur la protection des données* (en anglais *GDPR*). C'est une loi européenne qui encadre la manière dont les entreprises collectent et conservent les données personnelles (nom, adresse, e-mail). Concrètement, elle impose par exemple de ne pas garder ces données plus longtemps que nécessaire. Quand une telle règle vient d'une loi extérieure au code, un commentaire est utile : le code seul ne peut pas expliquer *pourquoi* le délai vaut 30 jours et pas 7.
+
 | Type de commentaire | Utile ? | Raison |
 |---------------------|---------|--------|
 | Justification d'un choix non évident | Oui | Le code montre le *quoi*, pas le *pourquoi*. |
 | Référence à une norme, un ticket, une RFC | Oui | Aide le futur lecteur à retrouver le contexte. |
 | Avertissement (effet de bord, perf, ordre d'appel) | Oui | Évite des bugs subtils. |
 | Paraphrase du code | Non | Bruit ; sera désynchronisé tôt ou tard. |
-| TODO sans owner ni date | Non | Reste *ad vitam æternam* ; préférer un ticket. |
+| TODO sans responsable ni date | Non | Reste *ad vitam æternam* ; préférer un ticket. |
+
+> **Que veut dire « RFC » ?** *RFC* signifie *Request For Comments* (« appel à commentaires »). Ce sont des documents techniques officiels qui définissent les standards d'Internet : comment fonctionne l'e-mail, le web, etc. Chacun porte un numéro (par exemple la RFC 7519 décrit le format de jetons *JWT*). Renvoyer vers une RFC dans un commentaire, c'est citer la source de référence, comme on cite un article de loi.
+
+> **Que veut dire « TODO » ?** *TODO* (« à faire », de l'anglais *to do*) est un commentaire qui marque un travail à terminer plus tard, par exemple `// TODO: gérer le cas du paiement refusé`. Le problème : un TODO sans personne responsable ni date reste là pour toujours. Mieux vaut créer un ticket dans l'outil de suivi de l'équipe, où il sera priorisé et n'oublié.
 
 ### Quand commenter abondamment
 
-Les API publiques (PHPDoc, JSDoc, docstrings) gagnent à être documentées : leurs utilisateurs ne lisent pas leur implémentation.
+> **Que veut dire « API » ?** *API* signifie *Application Programming Interface* (« interface de programmation d'application »). C'est la liste des fonctions qu'un morceau de code offre aux autres morceaux de code pour s'en servir, sans avoir à connaître son fonctionnement interne. Analogie : le tableau de bord d'une voiture est une API. Vous tournez le volant et appuyez sur la pédale (les fonctions offertes) sans savoir comment le moteur marche à l'intérieur. Une *API publique*, c'est la partie de votre code que d'autres équipes ou projets vont appeler.
+
+> **Que veut dire « PHPDoc », « JSDoc », « docstring » ?** Ce sont trois formes du même outil selon le langage : un bloc de texte structuré placé juste au-dessus d'une fonction pour décrire ce qu'elle fait, ce qu'elle attend et ce qu'elle renvoie. *PHPDoc* en PHP, *JSDoc* en JavaScript, *docstring* en Python. Les éditeurs de code les affichent automatiquement quand on survole la fonction, comme la notice d'un appareil.
+
+Les API publiques (PHPDoc, JSDoc, docstrings) gagnent à être documentées : leurs utilisateurs ne lisent pas leur implémentation (le code interne), seulement la notice.
 
 ### Heuristique générale
 
-> *« Un commentaire est l'aveu qu'on n'a pas su s'exprimer en code. »* — Robert C. Martin
+> *« Un commentaire est l'aveu qu'on n'a pas su s'exprimer en code. »* (Robert C. Martin)
 
 Avant d'écrire un commentaire, essayez : (1) renommer une variable, (2) extraire une fonction au nom signifiant, (3) introduire une constante. Si le besoin de commenter persiste, alors le commentaire est probablement justifié.
 
 ### Nuance : la position de Robert C. Martin est contestée
 
-La formule ci-dessus est l'un des conseils les plus repris — et les plus mal appliqués — de *Clean Code*. Il faut la lire dans son contexte : Martin combat les commentaires **redondants** (« incrémente i »), pas les commentaires en général. Des bases de code reconnues pour leur qualité — le **noyau Linux**, **FreeBSD**, **SQLite**, **PostgreSQL** — sont copieusement commentées, et leurs commentaires sont précisément ce qui les rend abordables à un nouvel arrivant.
+La formule ci-dessus est l'un des conseils les plus repris (et les plus mal appliqués) de *Clean Code*. Il faut la lire dans son contexte : Martin combat les commentaires **redondants** (« incrémente i »), pas les commentaires en général. Des bases de code reconnues pour leur qualité, comme le **noyau Linux**, **FreeBSD**, **SQLite** ou **PostgreSQL**, sont copieusement commentées, et leurs commentaires sont précisément ce qui les rend abordables à un nouvel arrivant.
 
 Un bon commentaire répond à une question que **ni le code ni les tests ne peuvent répondre** :
 
@@ -408,7 +432,7 @@ Découper une fonction de cinq lignes triviales en cinq fonctions d'une ligne nu
 
 ### Les seuils chiffrés : heuristiques, pas dogmes
 
-Robert C. Martin propose des fonctions « de quelques lignes ». Sandi Metz, dans ses conférences chez RailsConf, propose des seuils plus détaillés — qu'elle qualifie elle-même d'**heuristiques de relecture**, pas de lois :
+Robert C. Martin propose des fonctions « de quelques lignes ». Sandi Metz, dans ses conférences chez RailsConf, propose des seuils plus détaillés, qu'elle qualifie elle-même d'**heuristiques de relecture**, pas de lois :
 
 | Élément | Seuil Sandi Metz | Lecture |
 |---------|------------------|---------|
@@ -419,10 +443,18 @@ Robert C. Martin propose des fonctions « de quelques lignes ». Sandi Metz, dan
 
 Ces chiffres sont **des indicateurs de relecture**, à appliquer avec discernement. Une méthode de 8 lignes parfaitement claire est meilleure qu'une méthode de 4 lignes qui appelle deux helpers triviaux. Le critère final reste : *un lecteur étranger comprend-il sans effort ?* Les chiffres aident à se poser la question, pas à y répondre.
 
+> **Que veut dire « use case » ?** Un *use case* (« cas d'utilisation »), c'est une action métier complète vue de l'utilisateur : « valider une commande », « inscrire un client », « publier un article ». Dans le code, c'est souvent une classe dont la seule mission est d'orchestrer les étapes de cette action. Pensez à une recette de cuisine : elle énumère les étapes dans l'ordre, mais délègue le détail (couper, cuire) à d'autres.
+
+> **Que veut dire « Value Object » ?** Un *Value Object* (« objet-valeur ») est un petit objet qui représente une valeur du métier en garantissant qu'elle est toujours valide : un `Email`, un `Montant`, un `Iban`. Sa particularité : deux objets-valeurs identiques en contenu sont considérés comme égaux (comme deux billets de 10 euros : peu importe lequel, ils valent pareil). Il refuse d'exister dans un état invalide, ce qui évite de revérifier la même chose partout.
+
+> **Que veut dire « invariant » ?** Un *invariant* est une règle qui doit **toujours** rester vraie pour qu'un objet ait du sens : « un solde de compte ne descend jamais sous zéro », « un e-mail contient un `@` ». L'objet est responsable de protéger ses propres invariants, comme un videur qui ne laisse entrer que les personnes en règle.
+
+> **Que veut dire « enum » ?** Un *enum* (abréviation d'*énumération*) est un type qui ne peut prendre qu'un nombre fixe et connu de valeurs, par exemple un statut de commande qui vaut forcément `EN_ATTENTE`, `PAYEE` ou `EXPEDIEE`, et rien d'autre. Cela empêche les valeurs aberrantes (une commande au statut `bleu`).
+
 Cas où la règle « courte » s'efface :
 
 * **Boucles principales** d'orchestration (un *use case* qui enchaîne 7 étapes claires peut faire 30 lignes lisibles, mieux qu'éclaté en 7 méthodes privées d'une ligne chacune).
-* **Constructeurs de validation** d'un Value Object qui vérifie 5 invariants — séquence linéaire, sans abstraction utile à extraire.
+* **Constructeurs de validation** d'un Value Object qui vérifie 5 invariants : séquence linéaire, sans abstraction utile à extraire.
 * **`match` exhaustif** sur un enum métier : la longueur traduit la richesse du domaine, pas un défaut.
 
 [🔝 Retour en haut de page](#table-des-matières)
@@ -465,6 +497,8 @@ Un projet hérité avec sa propre convention doit conserver sa cohérence intern
 
 ## Duplication
 
+> **Que veut dire « DRY » ?** *DRY* signifie *Don't Repeat Yourself* (« ne vous répétez pas »). Une même règle ou connaissance ne doit exister qu'à **un seul endroit** dans le code, qui fait autorité. Sinon, le jour où la règle change, on risque d'oublier l'une des copies, et les versions divergent. Analogie : noter le numéro de téléphone d'un ami dans cinq carnets différents ; quand il change de numéro, certains carnets resteront faux.
+
 La règle DRY (*Don't Repeat Yourself*, Hunt & Thomas, 1999) impose qu'une connaissance n'ait qu'une représentation autoritaire dans le système. Dupliquer du code, c'est dupliquer la maintenance et risquer la dérive entre les copies.
 
 ### À éviter
@@ -494,18 +528,20 @@ function emailValide(?string $email): bool
 
 ### Attention à la fausse duplication
 
-Deux blocs qui se ressemblent aujourd'hui mais évoluent pour des raisons différentes ne sont pas une duplication — les fusionner crée un couplage accidentel. Avant d'extraire, vérifiez que les deux occurrences décrivent bien la **même règle métier**.
+Deux blocs qui se ressemblent aujourd'hui mais évoluent pour des raisons différentes ne sont pas une duplication ; les fusionner crée un couplage accidentel. Avant d'extraire, vérifiez que les deux occurrences décrivent bien la **même règle métier**.
 
 ### « Duplication coûte moins cher que la mauvaise abstraction »
 
-Sandi Metz a popularisé cette idée à RailsConf 2014, sous le nom de **AHA principle** (*Avoid Hasty Abstractions*) repris ensuite par Kent C. Dodds. Le raisonnement :
+> **Que veut dire « abstraction » et « couplage » ?** Une *abstraction* est une représentation simplifiée qui cache les détails pour ne garder que l'essentiel : une fonction `envoyerEmail()` est une abstraction qui masque les dizaines de lignes techniques en dessous. Une *mauvaise* abstraction regroupe à tort des choses qui n'avaient pas vocation à l'être. Le *couplage* mesure à quel point deux morceaux de code dépendent l'un de l'autre : plus ils sont couplés, plus toucher l'un risque de casser l'autre. On vise un couplage **faible**, comme des appareils branchés sur prises plutôt que soudés ensemble.
+
+Sandi Metz a popularisé cette idée à RailsConf 2014, sous le nom de **AHA principle** (*Avoid Hasty Abstractions*, « évitez les abstractions hâtives »), repris ensuite par Kent C. Dodds. Le raisonnement :
 
 1. Un développeur voit deux blocs qui se ressemblent et les fusionne dans une fonction commune.
 2. Plus tard, l'un des deux contextes change. Le développeur ajoute un paramètre, un `if`, un drapeau booléen.
 3. Trois mois après, la fonction « factorisée » contient cinq paramètres, deux modes incompatibles, et personne n'ose la toucher.
 4. Le coût total dépasse largement celui de la duplication initiale.
 
-**Règle pratique : la règle des trois (*Rule of Three*).** Wait until you have **three** examples before extracting an abstraction. Avec seulement deux occurrences, on ne sait pas encore ce qui varie ni ce qui reste constant. Avec trois, l'axe de variation est généralement clair.
+**Règle pratique : la règle des trois (*Rule of Three*).** Attendez d'avoir **trois** exemples avant d'extraire une abstraction. Avec seulement deux occurrences, on ne sait pas encore ce qui varie ni ce qui reste constant. Avec trois, l'axe de variation est généralement clair.
 
 ```php
 // À l'arrivée du 2e cas : on duplique sans culpabilité.
@@ -529,6 +565,10 @@ public function exporterDevis():    string { /* ... 12 lignes propres, qui resse
 ## Objets vs structures de données
 
 Robert C. Martin oppose deux styles de modélisation que beaucoup confondent :
+
+> **Que veut dire « DTO » ?** *DTO* signifie *Data Transfer Object* (« objet de transfert de données »). C'est un objet tout simple, sans aucune logique, dont le seul rôle est de transporter des données d'un endroit à un autre (par exemple du formulaire web jusqu'au cœur de l'application). Comparez-le à une enveloppe : elle contient le courrier, mais elle ne le lit pas et ne décide rien.
+
+> **Que veut dire « persistance » et « sérialisation » ?** *Persister* une donnée, c'est l'enregistrer durablement quelque part (le plus souvent en base de données) pour la retrouver après l'extinction du programme. *Sérialiser*, c'est transformer un objet en une suite de caractères transportable (par exemple du texte JSON) pour l'envoyer sur le réseau ou l'écrire dans un fichier ; *désérialiser* fait l'opération inverse. Analogie : sérialiser, c'est démonter un meuble à plat pour l'expédier ; désérialiser, c'est le remonter à l'arrivée.
 
 | | Structure de données | Objet |
 |--|----------------------|-------|
@@ -556,13 +596,17 @@ final class Position
 }
 ```
 
-Le piège classique : un *Active Record* qui est mi-DTO, mi-objet métier — il cumule les inconvénients des deux. Mieux vaut séparer la couche persistance (DTO/Repository) du domaine (objet riche).
+> **Que veut dire « Active Record » et « Repository » ?** Ce sont deux façons d'organiser l'accès à la base de données. Avec le motif *Active Record*, l'objet métier sait lui-même se sauvegarder (`$commande->save()`) : il mélange les données du métier et l'accès à la base. Avec le motif *Repository* (« dépôt »), un objet séparé s'occupe d'aller chercher et d'enregistrer les données (`$repository->enregistrer($commande)`), laissant l'objet métier se concentrer sur ses règles. Analogie : l'Active Record est un employé qui range lui-même ses dossiers ; le Repository est un archiviste dédié à qui on confie le rangement.
+
+Le piège classique : un *Active Record* qui est mi-DTO, mi-objet métier, il cumule les inconvénients des deux. Mieux vaut séparer la couche persistance (DTO/Repository) du domaine (objet riche).
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Loi de Déméter et Tell, Don't Ask
 
 ### Loi de Déméter (LoD)
+
+> **Que veut dire « loi de Déméter » (LoD) ?** *LoD* abrège *Law of Demeter* (du nom d'un projet de recherche). C'est une règle de bon voisinage entre objets : **ne parlez qu'à vos amis directs, jamais aux amis de vos amis**. Dans la vie, pour emprunter un outil à votre voisin, vous le lui demandez à lui ; vous n'allez pas fouiller dans le garage du voisin de votre voisin. En code, cela évite les longues chaînes du genre `a.b.c.d` qui supposent de connaître l'intérieur de chaque objet traversé.
 
 Énoncée à la Northeastern University en 1987, la loi tient en une phrase : **un objet ne devrait parler qu'à ses amis directs**, pas aux amis de ses amis.
 
@@ -581,9 +625,15 @@ $prix = $commande->getClient()->getAdresse()->getPays()->getTauxTva();
 $prix = $commande->tauxTvaApplicable();
 ```
 
+> **Que veut dire « train wreck » ?** Littéralement « accident de train ». C'est le surnom d'une longue chaîne d'appels enchaînés comme `$commande->getClient()->getAdresse()->getPays()->getTauxTva()`. Les appels s'alignent comme des wagons, et si un seul maillon de la chaîne change (par exemple le pays n'a plus de taux de TVA direct), tout déraille. On préfère demander en une fois ce dont on a besoin.
+
+> **Que veut dire « appelant » ?** L'*appelant* est le morceau de code qui utilise (qui « appelle ») une fonction ou une méthode. Si la fonction `B` est appelée depuis la fonction `A`, alors `A` est l'appelant de `B`. Garder une fonction stable « sans casser l'appelant » signifie que tous les codes qui s'en servaient continuent de marcher.
+
 Le second extrait permet de changer la structure interne (par exemple : la TVA dépend désormais de la catégorie du produit) sans casser l'appelant.
 
 ### Tell, Don't Ask
+
+> **Que veut dire « Tell, Don't Ask » ?** « Dis, ne demande pas. » Plutôt que de soutirer les données d'un objet pour décider à sa place à l'extérieur (lui *demander* son solde puis calculer), on lui *dit* directement quoi faire (`$compte->debiter($montant)`) et on le laisse appliquer ses propres règles. Analogie : au restaurant, vous dites au cuisinier « un steak à point » ; vous n'entrez pas en cuisine retourner la viande vous-même.
 
 Plutôt que d'**interroger** un objet pour prendre une décision à sa place, on lui **dit** quoi faire.
 
@@ -599,16 +649,24 @@ if ($compte->getSolde() >= $montant) {
 $compte->debiter($montant); // lance SoldeInsuffisant si nécessaire
 ```
 
+> **Que veut dire « encapsulation » ?** L'*encapsulation* consiste à cacher l'état interne d'un objet derrière des méthodes qui contrôlent son accès. Au lieu de laisser n'importe qui modifier directement le solde d'un compte, on oblige à passer par `debiter()` et `crediter()`, qui vérifient les règles. Analogie : un distributeur de billets ne vous laisse pas plonger la main dans le coffre ; il vous oblige à passer par des boutons qui appliquent les contrôles.
+
 Le second style respecte l'**encapsulation** : l'invariant « solde non négatif » ne peut plus être violé par un appelant distrait.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Fonctions pures et effets de bord
 
+> **Que veut dire « effet de bord » ?** Un *effet de bord* (en anglais *side effect*) est tout ce qu'une fonction fait en plus de calculer et renvoyer sa réponse : écrire dans un fichier, modifier une donnée partagée, envoyer un e-mail, afficher quelque chose. Analogie : demander l'heure à quelqu'un devrait juste vous donner l'heure ; si en plus la personne repeint votre salon, c'est un effet de bord, et ça complique tout.
+
+> **Que veut dire « fonction pure » ?** Une *fonction pure* est une fonction sans effet de bord dont la réponse ne dépend que de ses arguments : mêmes entrées, toujours même sortie. C'est comme une calculatrice : `2 + 3` donne toujours `5`, sans rien changer dans le monde. Ces fonctions sont les plus faciles à tester et à raisonner, car il n'y a aucune surprise cachée.
+
 Une **fonction pure** :
 
 1. **renvoie toujours le même résultat** pour les mêmes arguments ;
 2. **n'a aucun effet de bord** : pas d'écriture en base, en fichier, en réseau, dans une variable globale, dans un attribut.
+
+> **Que veut dire « mock » et « fixture » ?** Dans les tests, un *mock* (« objet factice ») est une fausse version d'une dépendance, fabriquée pour le test : par exemple un faux service d'envoi d'e-mail qui se contente de noter qu'on l'a appelé, sans rien envoyer. Une *fixture* est un jeu de données préparé à l'avance pour mettre le test dans un état connu (par exemple « trois clients déjà en base »). Les deux servent à isoler le code testé, mais ils alourdissent les tests : une fonction pure n'en a pas besoin, ce qui la rend bien plus simple à vérifier.
 
 Les fonctions pures sont triviales à tester : pas de mock, pas de fixture, pas de nettoyage.
 
@@ -631,10 +689,30 @@ function appliquerRemiseEtJournaliser(Commande $c, float $taux): Montant
 
 ### Stratégie : *functional core, imperative shell*
 
+> **Que veut dire « functional core, imperative shell » ?** Littéralement « cœur fonctionnel, coquille impérative ». L'idée : mettre tous les calculs et décisions du métier dans des fonctions pures (le **cœur**, facile à tester car sans contact avec le monde extérieur), et regrouper tout ce qui touche au monde réel (lire la base de données, envoyer un e-mail) dans une fine **coquille** autour. Analogie : un noyau de fruit dur et stable au centre, entouré d'une chair tendre qui interagit avec l'extérieur.
+
 L'idéal pratique est de :
 
 * **concentrer la logique métier dans des fonctions pures** (testables, raisonnables) ;
 * **reléguer les effets de bord à une fine couche extérieure** (contrôleur, *use case*) qui orchestre.
+
+```mermaid
+flowchart LR
+    subgraph Shell["Coquille impérative (effets de bord)"]
+        IN["Entrées : requête HTTP, message"]
+        DB[("Base de données")]
+        MAIL["E-mail / réseau"]
+    end
+    subgraph Core["Coeur fonctionnel (fonctions pures)"]
+        CALC["Calcul et décisions métier"]
+    end
+    IN --> DB
+    DB -->|"données chargées"| CALC
+    CALC -->|"résultat décidé"| DB
+    CALC -->|"résultat décidé"| MAIL
+```
+
+Le cœur ne connaît ni la base ni le réseau : on lui donne des données, il renvoie un résultat. C'est la coquille qui se charge d'aller chercher ces données puis d'appliquer le résultat.
 
 ```php
 // Cœur pur : décide
@@ -661,6 +739,10 @@ final class ValiderCommandeUseCase
 
 ## Utilisation de tests unitaires
 
+> **Que veut dire « test unitaire » ?** Un *test unitaire* est un petit programme qui vérifie automatiquement qu'un morceau de code (une « unité », souvent une fonction ou une classe) se comporte comme prévu. Il appelle le code avec des entrées connues et vérifie que la sortie est la bonne. Analogie : avant de monter un meuble, on teste chaque vis et chaque planche séparément ; si une pièce est défectueuse, on le sait tout de suite, sans attendre que le meuble s'effondre.
+
+> **Que veut dire « spécification exécutable » ?** Un bon test décrit ce que le code *doit* faire, comme un cahier des charges, mais sous une forme que la machine peut vérifier toute seule. Là où un document écrit se périme en silence, un test qui ne correspond plus au code passe au rouge et alerte. C'est donc une description du comportement attendu qui ne peut pas mentir.
+
 Un test unitaire vérifie le comportement d'une unité de code (typiquement une classe ou une fonction) isolée de ses dépendances. Il sert de filet de sécurité pour le refactoring et de spécification exécutable.
 
 ### Bonnes pratiques
@@ -668,9 +750,11 @@ Un test unitaire vérifie le comportement d'une unité de code (typiquement une 
 | Pratique | Description |
 |----------|-------------|
 | Un test = un comportement | Le nom du test décrit ce qui est vérifié (`it_renvoie_null_quand_id_inconnu`). |
-| Pattern AAA | *Arrange* (préparer), *Act* (exécuter), *Assert* (vérifier). |
+| Patron AAA | *Arrange* (préparer), *Act* (exécuter), *Assert* (vérifier). |
 | Indépendance | Les tests s'exécutent dans n'importe quel ordre, sans état partagé. |
 | Rapidité | Un test unitaire dure quelques millisecondes ; les tests lents découragent leur exécution. |
+
+> **Que veut dire le patron « AAA » et le mot « assertion » ?** *AAA* découpe un test en trois temps : *Arrange* (préparer la situation et les données), *Act* (exécuter l'action à tester), *Assert* (vérifier que le résultat est bien celui attendu). Une *assertion* est justement cette vérification automatique : une ligne du type « j'affirme que le résultat vaut 5 ». Si l'affirmation est fausse, le test échoue. Pensez à une recette : préparer les ingrédients, cuire, puis goûter pour confirmer.
 | Test d'erreurs | Vérifier les chemins d'échec autant que les chemins nominaux. |
 
 ### Exemple
@@ -697,13 +781,19 @@ final class CalculatriceTest extends TestCase
 
 ### Quand ne pas écrire de tests unitaires
 
-Le code purement déclaratif (configuration, mapping ORM) gagne peu à être unitairement testé. À l'inverse, du code algorithmique simple n'a pas toujours besoin d'une couverture exhaustive ; les tests d'intégration peuvent suffire.
+> **Que veut dire « ORM » et « tests d'intégration » ?** Un *ORM* (*Object-Relational Mapping*, « correspondance objet-relationnel ») est un outil qui traduit automatiquement entre les objets du code et les lignes d'une base de données, pour éviter d'écrire les requêtes à la main. Les *tests d'intégration*, eux, vérifient que plusieurs morceaux fonctionnent **ensemble** (par exemple le code et la vraie base de données), là où le test unitaire vérifie un morceau isolé. Analogie : tester chaque pièce d'une voiture, c'est l'unitaire ; démarrer le moteur monté pour voir si tout s'emboîte, c'est l'intégration.
+
+Le code purement déclaratif (configuration, *mapping* ORM) gagne peu à être unitairement testé. À l'inverse, du code algorithmique simple n'a pas toujours besoin d'une couverture exhaustive ; les tests d'intégration peuvent suffire.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Tests : principes F.I.R.S.T. et TDD
 
 ### F.I.R.S.T.
+
+> **Que veut dire « F.I.R.S.T. » ?** C'est un acronyme (un mot formé des initiales de plusieurs mots) qui résume cinq qualités d'un bon test unitaire : *Fast* (rapide), *Independent* (indépendant), *Repeatable* (reproductible), *Self-validating* (auto-validant) et *Timely* (écrit au bon moment). Le tableau ci-dessous détaille chacune. Le mot anglais *first* signifie « d'abord », clin d'œil au fait qu'on écrit idéalement le test avant le code.
+
+> **Que veut dire « I/O » ?** *I/O* abrège *Input/Output* (« entrées/sorties »). Ce sont tous les échanges entre le programme et le monde extérieur : lire un fichier, interroger une base de données, appeler le réseau. Ces opérations sont lentes et imprévisibles, d'où la consigne de les éviter dans les tests unitaires en les remplaçant par des doubles (de faux objets, voir l'encadré sur les *mocks*).
 
 Acronyme proposé par Robert C. Martin pour caractériser un bon test unitaire :
 
@@ -747,19 +837,28 @@ Ces deux tests sont **indépendants** (chacun crée son propre objet), **rapides
 
 ### TDD : Red, Green, Refactor
 
+> **Que veut dire « TDD » ?** *TDD* signifie *Test-Driven Development* (« développement piloté par les tests »). Au lieu d'écrire le code puis (peut-être) un test, on écrit le test **d'abord**, puis juste assez de code pour le satisfaire. Les couleurs viennent de l'outil de test : rouge quand le test échoue, vert quand il passe. Analogie : on dessine d'abord le contour de la pièce manquante d'un puzzle (le test), puis on fabrique la pièce qui rentre exactement dedans (le code).
+
 Le *Test-Driven Development* (Kent Beck, 2003) est une discipline en boucle courte :
 
-1. **Red** — Écrire un test qui échoue parce que le comportement n'existe pas encore. Lancer le test : il doit être rouge.
-2. **Green** — Écrire **le code minimum** qui fait passer le test au vert. Pas plus. Même si c'est moche.
-3. **Refactor** — Le test étant vert, améliorer la structure (extraire, renommer, dédupliquer) **sans changer le comportement**. Relancer les tests : ils restent verts.
+1. **Red** (rouge) : écrire un test qui échoue parce que le comportement n'existe pas encore. Lancer le test : il doit être rouge.
+2. **Green** (vert) : écrire **le code minimum** qui fait passer le test au vert. Pas plus. Même si c'est moche.
+3. **Refactor** (réorganiser) : le test étant vert, améliorer la structure (extraire, renommer, dédupliquer) **sans changer le comportement**. Relancer les tests : ils restent verts.
 4. Recommencer pour le comportement suivant.
+
+```mermaid
+flowchart LR
+    RED["RED : écrire un test qui échoue"] --> GREEN["GREEN : juste assez de code pour le faire passer"]
+    GREEN --> REFACTOR["REFACTOR : nettoyer sans changer le comportement"]
+    REFACTOR -->|"comportement suivant"| RED
+```
 
 Bénéfices : on n'écrit que du code couvert, la conception émerge progressivement, et chaque refactoring est protégé par un filet.
 
 #### Mini-cycle TDD en PHP
 
 ```php
-// 1. RED — j'écris le test avant que la classe n'existe.
+// 1. RED : j'écris le test avant que la classe n'existe.
 public function test_total_panier_vide_vaut_zero(): void
 {
     $panier = new Panier();
@@ -767,7 +866,7 @@ public function test_total_panier_vide_vaut_zero(): void
 }
 // (Le test échoue : la classe Panier n'existe pas encore.)
 
-// 2. GREEN — je fais passer, même grossièrement.
+// 2. GREEN : je fais passer, même grossièrement.
 final class Panier
 {
     public function total(): int { return 0; }
@@ -811,9 +910,13 @@ La présentation classique de TDD impose le test **avant** le code. C'est effica
 | Approche | Quand l'employer | Limites |
 |----------|------------------|---------|
 | **Test-first strict** | Comportement nouveau, API à concevoir, bug à reproduire avant correction. | Inutilement lourd pour une exploration ou un *spike* jetable. |
-| **Test-after immédiat** | Code écrit en mode exploratoire (REPL, prototype), figé en production via tests rétroactifs **avant** le commit. | Risque d'écrire des tests qui ne testent que ce que le code fait déjà — penser à *tester l'intention*. |
+| **Test-after immédiat** | Code écrit en mode exploratoire (REPL, prototype), figé en production via tests rétroactifs **avant** le commit. | Risque d'écrire des tests qui ne testent que ce que le code fait déjà : penser à *tester l'intention*. |
 | **Test-after de refactoring** | Avant de refactorer une zone non couverte : on **caractérise** d'abord avec des *characterization tests* (Michael Feathers, *Working Effectively with Legacy Code*), puis on refactore. | Les tests de caractérisation gèlent le comportement actuel, bugs compris. À nettoyer dans un second temps. |
 | **Aucun test** | Script de migration unique, *one-shot* d'analyse, code de présentation. | Ne pas se mentir : si le script tourne deux fois, il vit, et il finira en prod sans test. |
+
+> **Que veut dire « REPL », « spike », « characterization test » ?** Un *REPL* (*Read-Eval-Print Loop*, « lire-évaluer-afficher en boucle ») est une console interactive où l'on tape une ligne de code et voit le résultat aussitôt, idéale pour bricoler. Un *spike* (« pointe ») est un bout de code écrit vite pour répondre à une question (« est-ce faisable ? »), destiné à être jeté. Un *characterization test* (« test de caractérisation ») est un test écrit après coup sur du code existant non testé : il fige le comportement actuel, tel quel, pour pouvoir le réorganiser sans rien casser. Pensez à photographier une pièce avant de la repeindre, afin de pouvoir comparer ensuite.
+
+> **Que veut dire « commit » et « prod » ?** Un *commit* est un enregistrement daté d'un ensemble de modifications dans l'historique du code (avec un outil comme Git) : une sorte de point de sauvegarde nommé. *Prod*, abréviation de *production*, désigne l'environnement réel où tourne le logiciel utilisé par les vrais utilisateurs, par opposition à la machine du développeur. « Finir en prod » signifie « se retrouver entre les mains des utilisateurs ».
 
 L'important n'est pas la chronologie mais la **discipline du filet** : aucune modification ne traverse la frontière sans que **quelque chose** vérifie qu'elle ne casse rien. Test-first amène cette discipline plus naturellement, mais ce n'est pas la seule voie.
 
@@ -832,6 +935,8 @@ L'important n'est pas la chronologie mais la **discipline du filet** : aucune mo
 ## Documentation de code
 
 La documentation utile est celle qui survit aux refactorings : elle décrit *l'intention*, pas l'implémentation. Trois niveaux complémentaires :
+
+> **Que veut dire « README », « ADR », « OpenAPI » ?** Un *README* (« lis-moi ») est le fichier d'accueil d'un projet : à quoi il sert, comment l'installer, comment démarrer. Un *ADR* (*Architecture Decision Record*, « fiche de décision d'architecture ») est une note courte qui consigne une décision importante et **pourquoi** elle a été prise, pour que les successeurs comprennent le raisonnement. *OpenAPI* est un format standard pour décrire les points d'entrée d'une API web (les adresses à appeler, ce qu'elles attendent et renvoient), souvent généré automatiquement. Le mot *implémentation* désigne simplement le détail concret de comment le code est écrit à l'intérieur.
 
 | Niveau | Public | Exemples |
 |--------|--------|----------|
@@ -867,6 +972,10 @@ public function find(int $id): User { ... }
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Gestion des erreurs et des exceptions
+
+> **Que veut dire « exception » ?** Une *exception* est un signal d'alarme qu'un morceau de code lance (en anglais *throw*, « jeter ») quand il rencontre un problème qu'il ne peut pas résoudre seul, par exemple « base de données injoignable ». Ce signal remonte automatiquement jusqu'à un endroit capable de réagir, qui le « rattrape » (*catch*). Analogie : un employé qui ne peut pas traiter un dossier ne le jette pas à la poubelle en silence ; il fait remonter le problème à son responsable, qui décide quoi faire.
+
+> **Que veut dire « journaliser » (un log) ?** *Journaliser* (en anglais *log*), c'est écrire des messages dans un fichier d'historique pour garder une trace de ce qui se passe dans le programme : erreurs, événements importants, contexte. Quand un bug survient en production, ce journal est souvent la seule fenêtre sur ce qui s'est réellement produit, comme la boîte noire d'un avion.
 
 Une erreur est un événement exceptionnel qui empêche une opération d'aboutir. Le code doit la signaler clairement, l'attraper là où on peut décider quoi en faire, et fournir au journal de quoi diagnostiquer.
 
@@ -908,6 +1017,8 @@ Une absence de résultat *attendue* (recherche qui ne trouve rien) n'est pas une
 
 ## Structure du code claire et organisée
 
+> **Que veut dire « domaine » et « couche technique » ?** Le *domaine* (ou domaine métier), c'est le sujet réel que traite le logiciel : pour une boutique, ce sont les commandes, les factures, le catalogue. Une *couche technique*, c'est un rôle dans la mécanique du code (les contrôleurs, les services, l'accès base). Organiser **par domaine**, c'est ranger ensemble tout ce qui concerne la facturation ; organiser **par couche**, c'est ranger ensemble tous les contrôleurs, puis tous les services. Analogie : dans une bibliothèque, ranger par thème (cuisine, voyage) plutôt que par type d'objet (toutes les couvertures rouges ensemble).
+
 Un projet bien structuré laisse deviner où ajouter une fonctionnalité avant même de l'avoir lue. Cela suppose une organisation **par domaine** plutôt que par couche technique.
 
 ### À éviter
@@ -942,13 +1053,39 @@ src/
 
 Chaque module reste autonome : on peut le lire sans connaître les autres, et le déplacer ou l'extraire en service à part sans démêler des dépendances cachées.
 
+```mermaid
+flowchart TB
+    subgraph Couche["Par couche technique : une fonctionnalité est éparpillée"]
+        direction LR
+        C1["Contrôleurs"]
+        M1["Modèles"]
+        S1["Services"]
+        C1 -. facturation .- M1
+        M1 -. facturation .- S1
+    end
+    subgraph Domaine["Par domaine : une fonctionnalité est regroupée"]
+        direction LR
+        F1["Facturation<br/>(contrôleur + domaine + persistance)"]
+        F2["Catalogue<br/>(contrôleur + domaine + persistance)"]
+        F3["Utilisateur<br/>(contrôleur + domaine + persistance)"]
+    end
+```
+
+Dans le schéma du haut, comprendre la facturation oblige à sauter de dossier en dossier ; dans celui du bas, tout tient au même endroit.
+
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Gestion des dépendances
 
+> **Que veut dire « dépendance » et « bibliothèque » ?** Une *dépendance* est un bout de code écrit par d'autres que votre programme réutilise au lieu de le réécrire (par exemple un outil tout fait pour envoyer des e-mails). Une *bibliothèque* (en anglais *library*) est justement un tel ensemble de fonctions prêtes à l'emploi. L'avantage : on gagne du temps. Le coût : il faut suivre ses mises à jour et ses failles, comme un appareil qu'on n'a pas fabriqué soi-même mais qu'on doit entretenir.
+
 Une dépendance externe (bibliothèque, framework) est du code que vous ne maintenez pas mais que vous embarquez. Le coût se paie à la mise à jour, à la sécurité et à la compatibilité.
 
 ### Bonnes pratiques
+
+> **Que veut dire « Composer », « SemVer », « CVE » ?** *Composer* est l'outil standard qui télécharge et organise les dépendances d'un projet PHP. *SemVer* (*Semantic Versioning*, « versionnage sémantique ») est une convention de numéros de version en trois parties, `MAJEUR.MINEUR.CORRECTIF` (par exemple `2.3.1`) : on augmente le dernier pour un correctif, celui du milieu pour une nouveauté compatible, et le premier pour un changement qui **casse** l'existant. Une *CVE* (*Common Vulnerabilities and Exposures*) est une faille de sécurité connue et répertoriée publiquement, avec un identifiant unique.
+
+> **Que veut dire « résolution transitive » et « autoload » ?** Une dépendance peut elle-même dépendre d'autres dépendances ; la *résolution transitive* est le travail de l'outil qui démêle toute cette chaîne (les amis de vos amis) et installe le bon ensemble. L'*autoload* (« chargement automatique ») est le mécanisme qui charge le bon fichier au moment où on utilise une classe, sans avoir à l'inclure à la main.
 
 | Pratique | Pourquoi |
 |----------|----------|
@@ -957,6 +1094,8 @@ Une dépendance externe (bibliothèque, framework) est du code que vous ne maint
 | Suivre [SemVer](https://semver.org/) | `^1.2.3` accepte les correctifs et fonctionnalités, pas les ruptures. |
 | Auditer régulièrement (`composer audit`) | Détecte les CVE connues. |
 | Limiter les dépendances optionnelles | Chaque dépendance ajoute une surface d'attaque et un risque de conflit. |
+
+> **Que veut dire « CI » ?** *CI* signifie *Continuous Integration* (« intégration continue »). C'est un service automatique qui, à chaque modification envoyée, récupère le code et lance tout seul les vérifications (tests, contrôles de style) pour signaler immédiatement ce qui casse. Analogie : un contrôle qualité en bout de chaîne qui inspecte chaque pièce avant qu'elle n'aille plus loin.
 
 ### À éviter
 
@@ -967,6 +1106,8 @@ Une dépendance externe (bibliothèque, framework) est du code que vous ne maint
   }
 }
 ```
+
+> **Que veut dire « JSON » ?** *JSON* (*JavaScript Object Notation*) est un format texte simple pour écrire des données structurées sous forme de paires « clé : valeur », lisible aussi bien par l'humain que par la machine. Le fichier `composer.json` ci-dessus, par exemple, liste les dépendances du projet dans ce format.
 
 `*` accepte la prochaine version majeure et son lot de ruptures.
 
@@ -984,9 +1125,13 @@ Une dépendance externe (bibliothèque, framework) est du code que vous ne maint
 
 ## Gestion de la complexité du code
 
+> **Que veut dire « complexité cyclomatique » ?** C'est une mesure chiffrée du nombre de chemins différents qu'un programme peut emprunter dans une fonction. Chaque `if`, chaque boucle, chaque branche ajoute un chemin possible. Plus il y en a, plus il faut de tests pour tout couvrir et plus la fonction est dure à suivre. Analogie : un labyrinthe à une seule allée se parcourt sans réfléchir ; avec dix embranchements, il faut une carte.
+
+> **Que veut dire « clause de garde » ?** Une *clause de garde* (*guard clause*) est un `if` placé tout en haut d'une fonction qui traite immédiatement un cas particulier et sort (avec `return` ou en levant une exception). Cela évite d'imbriquer le code dans des `if` en cascade : on écarte d'abord les cas anormaux, puis le cas normal s'écrit à plat. Analogie : le videur à l'entrée renvoie tout de suite ceux qui n'ont pas le bon billet, et l'intérieur reste réservé aux gens en règle.
+
 La complexité cyclomatique mesure le nombre de chemins d'exécution distincts dans une fonction. Au-delà de 10, la fonction devient difficile à tester exhaustivement et à comprendre.
 
-### À éviter — imbrication excessive
+### À éviter : imbrication excessive
 
 ```php
 function inscrire(array $data) {
@@ -1002,7 +1147,7 @@ function inscrire(array $data) {
 }
 ```
 
-### À préférer — clauses de garde
+### À préférer : clauses de garde
 
 ```php
 function inscrire(array $data) {
@@ -1017,6 +1162,8 @@ function inscrire(array $data) {
 }
 ```
 
+> **Que veut dire « polymorphisme » et « table de dispatch » ?** Le *polymorphisme* (du grec « plusieurs formes ») permet à plusieurs types d'objets de répondre au même appel, chacun à sa façon : on demande `commission()` à un objet employé sans savoir s'il est en CDI ou stagiaire, et chacun calcule la sienne. Cela remplace les longues cascades de `if` testant le type. Une *table de dispatch* (« table d'aiguillage ») est une variante plus simple : une correspondance qui associe directement une valeur à l'action à exécuter, comme un standard téléphonique qui dirige chaque numéro vers le bon poste.
+
 | Symptôme | Remède |
 |----------|--------|
 | `if`/`else` profondément imbriqués | Clauses de garde (`return`/`throw` tôt). |
@@ -1026,6 +1173,8 @@ function inscrire(array $data) {
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Les fonctions doivent faire une seule chose
+
+> **Que veut dire « principe de responsabilité unique » (SRP) ?** *SRP* abrège *Single Responsibility Principle*. L'idée : une fonction (ou une classe) ne doit avoir qu'**une seule raison de changer**, donc s'occuper d'une seule chose. Une fonction qui se connecte à la base, calcule, met en forme et envoie un e-mail changera pour quatre raisons différentes ; chaque évolution risque de casser les autres. Analogie : un couteau suisse qui fait tout fait chaque tâche moins bien et casse pour tout le monde quand une seule lame se brise.
 
 C'est le principe de responsabilité unique appliqué au niveau d'une fonction. Si vous pouvez décrire le rôle d'une fonction sans utiliser « et » ou « puis », elle est probablement bien découpée.
 
@@ -1062,15 +1211,19 @@ final class UtilisateurRepository
 }
 ```
 
-La connexion est injectée (responsabilité d'un autre), la requête est paramétrée (sécurité), l'hydratation est déléguée à `Utilisateur::depuisLigne` (responsabilité du domaine).
+> **Que veut dire « injectée » (injection de dépendance) et « hydratation » ?** *Injecter* une dépendance, c'est fournir à un objet, depuis l'extérieur, les outils dont il a besoin (ici la connexion à la base), au lieu qu'il les fabrique lui-même. Cela rend le code testable, car on peut lui passer un faux outil. Analogie : on branche une lampe sur une prise existante au lieu de lui demander de produire sa propre électricité. L'*hydratation* est l'opération qui remplit un objet à partir de données brutes (une ligne de base de données), comme verser de l'eau sur une éponge déshydratée pour lui redonner sa forme.
 
 ### Quand assouplir
+
+> **Que veut dire « parser » ?** *Parser* (« analyser syntaxiquement »), c'est lire un texte brut et le transformer en une structure que le programme comprend : par exemple lire une date écrite `2026-06-27` et en faire un véritable objet date. Un *parser* est le composant qui fait ce travail, comme un traducteur qui convertit une phrase étrangère en sens exploitable.
 
 Une fonction utilitaire d'une dizaine de lignes qui orchestre deux étapes très liées (« lire un fichier puis le parser ») peut rester d'un seul tenant si l'extraction n'apporte aucune réutilisabilité.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Code smells (mauvaises odeurs de code)
+
+> **Que veut dire « code smell » et « refactoring » ?** Un *code smell* (« mauvaise odeur de code ») est un signe extérieur qui suggère qu'un bout de code mérite d'être revu : ce n'est pas un bug, juste une alerte, comme une odeur suspecte dans un frigo qui invite à vérifier sans prouver que tout est avarié. Le *refactoring* (« refactorisation ») est l'action de réorganiser le code pour l'améliorer **sans changer ce qu'il fait** : on déplace les meubles d'une pièce, on ne change pas la fonction de la pièce. La table ci-dessous nomme les odeurs les plus courantes et le refactoring qui les soigne.
 
 Un *code smell* est un signal visuel qu'un morceau de code mérite probablement un refactoring. Ce catalogue, popularisé par Martin Fowler et Kent Beck dans *Refactoring*, est un vocabulaire commun pour nommer ce que l'on sent sans toujours savoir formuler.
 
@@ -1079,7 +1232,7 @@ Un *code smell* est un signal visuel qu'un morceau de code mérite probablement 
 | **Long method** | Méthode trop longue | La fonction dépasse l'écran ; on perd le fil. | *Extract Method* (extraire des sous-fonctions au nom signifiant). |
 | **Large class** | Classe trop grosse | Trop d'attributs, trop de méthodes, plusieurs responsabilités. | *Extract Class* / *Extract Subclass* en respectant la SRP. |
 | **Long parameter list** | Liste de paramètres trop longue | Quatre arguments et plus, certains corrélés. | *Introduce Parameter Object*. |
-| **Primitive obsession** | Obsession des primitifs | Tout est `string`, `int`, `array` — y compris les concepts métier (email, montant, IBAN). | *Introduce Value Object* (`Email`, `Iban`, `Montant`). |
+| **Primitive obsession** | Obsession des primitifs | Tout est `string`, `int`, `array`, y compris les concepts métier (email, montant, IBAN). | *Introduce Value Object* (`Email`, `Iban`, `Montant`). |
 | **Feature envy** | Envie de fonctionnalité | Une méthode de `A` manipule plus les attributs de `B` que les siens. | *Move Method* vers `B`. |
 | **Data clump** | Grumeau de données | Un même groupe de variables apparaît dans plusieurs signatures (`$rue`, `$cp`, `$ville`). | Regrouper dans une classe `Adresse`. |
 | **Shotgun surgery** | Modification éparpillée | Un seul changement métier oblige à toucher dix fichiers. | Regrouper la connaissance (*Move Method*, *Inline Class*, module dédié). |
@@ -1097,6 +1250,8 @@ Un *code smell* est un signal visuel qu'un morceau de code mérite probablement 
 | **Temporary field** | Champ temporaire | Un attribut n'a une valeur sensée que pendant une partie du cycle de vie. | *Extract Class* (les champs corrélés vivent ensemble) ou variable locale. |
 
 ### Exemple : *Primitive Obsession* en PHP
+
+> **Que veut dire « primitif » et « IBAN » ?** Un type *primitif* est un type de base fourni par le langage : `string` (texte), `int` (nombre entier), `bool` (vrai/faux), `array` (liste). L'*obsession des primitifs* consiste à représenter des concepts métier riches (un e-mail, un montant) par ces types bruts, ce qui oblige à revérifier leur validité partout. Un *IBAN* (*International Bank Account Number*) est le numéro de compte bancaire international ; un simple `string` ne garantit pas qu'il soit valide, alors qu'un type dédié `Iban` le peut.
 
 ```php
 // À éviter : un email est une string... jusqu'à la prochaine validation oubliée.
@@ -1161,7 +1316,31 @@ Voir le chapitre [Nommage](#nommage-des-variables). On nomme `0.20` en `TAUX_TVA
 
 ### Replace Conditional with Polymorphism
 
-Quand un même `switch` apparaît à plusieurs endroits, on le remplace par un appel polymorphe.
+> **Que veut dire « classe abstraite », « sous-classe », « hériter » ?** Une *classe* est un plan qui décrit un type d'objet. Une *classe abstraite* est un plan incomplet qui sert de base commune : on ne crée pas d'objet directement à partir d'elle, on en dérive des versions concrètes. Une *sous-classe* est une classe qui *hérite* d'une autre : elle reçoit ses caractéristiques et peut les compléter ou les adapter. Analogie : « Véhicule » est la classe abstraite générale ; « Voiture » et « Moto » en héritent et précisent chacune sa façon de rouler.
+
+Quand un même `switch` apparaît à plusieurs endroits, on le remplace par un appel polymorphe : on demande la même chose à chaque type d'objet, et chacun répond à sa manière.
+
+```mermaid
+classDiagram
+    class Employe {
+        <<abstrait>>
+        +commission() float
+    }
+    class Cdi {
+        +commission() float
+    }
+    class Cdd {
+        +commission() float
+    }
+    class Stagiaire {
+        +commission() float
+    }
+    Employe <|-- Cdi
+    Employe <|-- Cdd
+    Employe <|-- Stagiaire
+```
+
+La flèche se lit « hérite de » : chaque type d'employé fournit sa propre `commission()`. Ajouter un type (alternant, freelance) revient à ajouter une boite, sans toucher au code qui appelle `commission()`.
 
 ```php
 // Avant : switch dispersé dans plusieurs services
@@ -1233,7 +1412,9 @@ Si une méthode de `A` accède plus aux attributs de `B` que de `A` (*feature en
 
 ### Replace Constructor with Factory Method
 
-Le constructeur a deux limites : son nom est imposé (le nom de la classe), et il renvoie nécessairement une instance de **cette** classe — jamais d'une sous-classe ou d'un cache. Une méthode fabrique nommée résout les deux.
+> **Que veut dire « constructeur », « instance », « fabrique » ?** Un *constructeur* est la méthode spéciale appelée quand on crée un objet (avec `new`), chargée de l'initialiser. Une *instance* est un objet concret produit à partir d'une classe : la classe `Voiture` est le plan, chaque voiture réelle est une instance. Une *fabrique* (en anglais *factory*) est une méthode dont le seul rôle est de créer des objets, souvent avec un nom plus parlant que `new` et la possibilité de renvoyer des variantes. Analogie : la fabrique est l'usine, l'instance est la voiture qui en sort.
+
+Le constructeur a deux limites : son nom est imposé (le nom de la classe), et il renvoie nécessairement une instance de **cette** classe, jamais d'une sous-classe ou d'un cache. Une méthode fabrique nommée résout les deux.
 
 ```php
 // Avant : un seul constructeur, validation mêlée à la construction, pas de variantes
@@ -1272,6 +1453,8 @@ Avantages : noms parlants (`Email::depuisChaine($s)` se lit mieux que `new Email
 
 ### Replace Inheritance with Delegation
 
+> **Que veut dire « héritage », « délégation », « composition » ?** L'*héritage* fait reprendre à une classe tout le comportement d'une autre (relation « est un » : un chat *est un* animal). La *délégation*, c'est confier une tâche à un autre objet qu'on possède (relation « utilise un » : une voiture *utilise un* moteur, elle n'*est pas* un moteur). La *composition* consiste justement à construire un objet en assemblant d'autres objets auxquels il délègue, plutôt qu'en héritant. Préférer la composition évite de coller deux classes par une relation trop rigide.
+
 L'héritage est un mécanisme de **réutilisation** simple, mais il fige une relation forte (« est un ») et expose toute la surface du parent à l'enfant. Quand la relation est en réalité « utilise un » ou « possède un », la délégation est plus souple.
 
 ```php
@@ -1306,7 +1489,9 @@ final class PileSansDoublon
 }
 ```
 
-Heuristique : préférez l'**héritage** quand la relation est *vraiment* un sous-typage substituable (Liskov), et la **délégation** dans tous les autres cas. *Favor composition over inheritance* (Gang of Four, 1994) reste l'un des conseils les plus rentables.
+> **Que veut dire « Liskov » et « Gang of Four » ?** Le *principe de substitution de Liskov* (du nom de l'informaticienne Barbara Liskov) dit qu'on doit pouvoir remplacer un objet d'une classe par un objet d'une de ses sous-classes sans que le programme se casse : si du code attend un `Animal`, lui donner un `Chat` doit marcher sans surprise. Le *Gang of Four* (« bande des quatre ») est le surnom des quatre auteurs d'un livre fondateur de 1994 sur les *design patterns* (modèles de conception réutilisables) ; leur conseil « préférez la composition à l'héritage » reste très suivi.
+
+Heuristique : préférez l'**héritage** quand la relation est *vraiment* un sous-typage substituable (Liskov), et la **délégation** dans tous les autres cas. *Favor composition over inheritance* (« préférez la composition à l'héritage », Gang of Four, 1994) reste l'un des conseils les plus rentables.
 
 ### Replace Exception with Specialized Type
 
@@ -1323,18 +1508,24 @@ Une exception de type `Exception` ou `RuntimeException` ne dit rien à l'appelan
 
 ## Boy Scout Rule en pratique
 
-> *« Laissez le campement plus propre que vous ne l'avez trouvé. »* — Robert C. Martin
+> **Que veut dire « Boy Scout Rule » ?** La *règle du scout* (en français) reprend la consigne des scouts : laissez l'endroit plus propre que vous ne l'avez trouvé. Appliquée au code, chaque fois que vous ouvrez un fichier, vous l'améliorez d'un petit geste (un meilleur nom, une ligne morte supprimée), sans attendre un grand nettoyage qui n'arrive jamais.
 
-La règle est facile à citer, plus délicate à appliquer sans **dérive de périmètre** (*scope creep*). Une PR de correction de bug qui touche 40 fichiers parce que « tant qu'on y est… » devient inrelisable, retarde la correction urgente, et masque le vrai changement.
+> *« Laissez le campement plus propre que vous ne l'avez trouvé. »* (Robert C. Martin)
+
+> **Que veut dire « PR » et « dérive de périmètre » ?** Une *PR* (*Pull Request*, « demande de fusion ») est la proposition d'intégrer un ensemble de modifications dans le code commun, soumise à la relecture des collègues avant d'être acceptée. La *dérive de périmètre* (*scope creep*) est la tendance d'une tâche à grossir au-delà de ce qui était prévu (« tant que j'y suis, je corrige aussi ceci, et cela... »), au point de devenir incontrôlable.
+
+La règle est facile à citer, plus délicate à appliquer sans **dérive de périmètre** (*scope creep*). Une PR de correction de bug qui touche 40 fichiers parce que « tant qu'on y est… » devient impossible à relire, retarde la correction urgente, et masque le vrai changement.
 
 ### Le découpage qui marche
 
+> **Que veut dire « fix », « cherry-pick », « hotfix », « diff » ?** Un *fix* est une correction (d'un bug ou d'un petit manque). *Cherry-picker* (« choisir à la pièce ») signifie reprendre un commit précis et l'appliquer ailleurs sans tout le reste, comme cueillir une seule cerise sur la branche. Un *hotfix* (« correctif à chaud ») est une correction urgente appliquée vite à la version en production. Un *diff* (« différence ») est l'affichage de ce qui a changé entre deux versions d'un fichier : les lignes ajoutées et supprimées, que les relecteurs examinent.
+
 | Type de changement | Où le mettre |
 |--------------------|--------------|
-| Le **fix** (bug ou feature minimale) | Commit dédié, le plus petit possible. C'est le commit qu'on saura cherry-picker en hotfix. |
+| Le **fix** (bug ou fonctionnalité minimale) | Commit dédié, le plus petit possible. C'est le commit qu'on saura cherry-picker en hotfix. |
 | Le **refactoring exposé par le fix** (renommage, extraction qui clarifie) | Commit séparé, **avant** ou **après** le fix selon que la nouvelle forme aide à comprendre le bug. |
 | Le **nettoyage opportuniste** (commentaire mort, indentation incohérente, import inutilisé) | Commit séparé, ou PR distincte si le bruit dilue le diff. |
-| Les **idées de refactoring** repérées mais non urgentes | Ticket / TODO daté avec owner, **pas** dans la PR courante. |
+| Les **idées de refactoring** repérées mais non urgentes | Ticket / TODO daté avec responsable, **pas** dans la PR courante. |
 
 ### Heuristique « 30 secondes » de Martin Fowler
 
@@ -1361,16 +1552,22 @@ On n'a *pas* renommé `setAge` en `definirAge`, ni transformé `int` en `Age` Va
 
 ### Refactor first, then add feature
 
-Kent Beck l'a formalisé : *« For each desired change, make the change easy (warning: this may be hard), then make the easy change. »* Concrètement, en deux PR successives :
+> **Que veut dire « Refactor first, then add feature » ?** « Réorganisez d'abord, ajoutez la fonctionnalité ensuite. » Avant de coder une nouveauté, on remanie d'abord le code existant pour que cette nouveauté devienne facile à insérer, puis on l'insère. Analogie : avant d'ajouter une prise électrique dans un mur, on tire d'abord la gaine ; une fois le passage prêt, brancher la prise est trivial.
+
+Kent Beck l'a formalisé : *« For each desired change, make the change easy (warning: this may be hard), then make the easy change. »* (« Pour chaque changement souhaité, rendez d'abord le changement facile, ce qui peut être difficile, puis faites le changement devenu facile. ») Concrètement, en deux PR successives :
 
 1. **PR refactoring** : on prépare le terrain. Tests verts avant, tests verts après. Aucun comportement nouveau. Diff orienté *structure*.
 2. **PR feature** : la fonctionnalité s'écrit en quelques lignes parce que la PR précédente a aplani la route. Diff orienté *intention*.
 
-Cette séquence rend les revues plus rapides (chaque revueur sait ce qu'il regarde) et l'historique plus utile (un `git log` raconte les évolutions).
+> **Que veut dire « Git » et « git log » ?** *Git* est l'outil de gestion de versions le plus répandu : il enregistre l'historique de toutes les modifications du code et permet de revenir en arrière, de travailler à plusieurs et de comparer les versions. La commande `git log` affiche cet historique, commit par commit, comme le carnet de bord daté du projet.
+
+Cette séquence rend les revues plus rapides (chaque relecteur sait ce qu'il regarde) et l'historique plus utile (un `git log` raconte les évolutions).
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Revue de code : hygiène et fond
+
+> **Que veut dire « revue de code » et « linter » ?** Une *revue de code* (*code review*) est l'examen d'une modification par un ou plusieurs collègues avant de l'intégrer : on relit le travail d'un autre comme on relit le brouillon d'un texte, pour repérer erreurs et améliorations. Un *linter* est un outil qui contrôle automatiquement le respect des règles de style (indentation, espaces, conventions) ; il prend en charge la forme pour que les humains se concentrent sur le fond.
 
 Une revue de code (*code review*) sert à **diffuser la connaissance** et à **détecter les défauts d'intention**. Trop souvent elle dégénère en débat de ponctuation. Quelques règles tirées des écrits de Michael Lynch, Gergely Orosz et de la culture Google.
 
@@ -1382,9 +1579,11 @@ Une revue de code (*code review*) sert à **diffuser la connaissance** et à **d
 4. **La lisibilité est-elle suffisante ?** Un nouveau venu comprendra-t-il dans six mois ?
 5. **Les détails de style.** En dernier, et idéalement délégués au linter.
 
-Inverser cet ordre — discuter d'abord de l'emplacement d'une accolade — est l'erreur la plus fréquente. Le linter règle la forme ; l'humain règle le fond.
+Inverser cet ordre, en discutant d'abord de l'emplacement d'une accolade, est l'erreur la plus fréquente. Le linter règle la forme ; l'humain règle le fond.
 
 ### Hygiène : ce qui rend une revue supportable
+
+> **Que veut dire « nitpick », « bikeshedding », « merge » ?** Un *nitpick* (« pinaillage ») est une remarque sur un détail mineur, sans réel enjeu. Le *bikeshedding* (« effet garage à vélos ») désigne la tendance à débattre sans fin de questions triviales (la couleur du garage) tout en survolant les questions importantes (le réacteur nucléaire à côté), parce que chacun a un avis facile sur le détail. *Merger* (« fusionner »), c'est intégrer enfin une modification validée dans la base de code commune.
 
 | Mauvaise pratique | Symptôme | Remède |
 |--------------------|----------|--------|
@@ -1393,7 +1592,7 @@ Inverser cet ordre — discuter d'abord de l'emplacement d'une accolade — est 
 | **Aller-retour sans fin** | La PR vit deux semaines, le contexte s'efface. | Mettre une **borne** : 2 cycles de revue, puis appel ou *pair review* en synchrone. |
 | **Bikeshedding** | Discussion infinie sur le nom d'une variable triviale. | Auteur tranche, revue lève la main si elle change d'avis sous 24 h. |
 | **Revue tardive** | La PR fait 2000 lignes ; la revue devient symbolique. | Limiter à **400 lignes** par PR (étude SmartBear). Au-delà, scinder. |
-| **Revue par autorité** | Le senior impose son avis sans justification. | Toute remarque doit s'argumenter. *Strong opinions, weakly held.* |
+| **Revue par autorité** | Le senior impose son avis sans justification. | Toute remarque doit s'argumenter. *Strong opinions, weakly held* : des avis tranchés, mais qu'on lâche dès qu'un meilleur argument apparaît. |
 
 ### Le langage des commentaires de revue
 
@@ -1417,9 +1616,13 @@ Le ton compte autant que le contenu. Quelques préfixes utilisés chez Google, M
 
 ## Outillage PHP : du linter au mutation testing
 
+> **Que veut dire « mutation testing » ?** Le *mutation testing* (« test par mutation ») vérifie la **qualité des tests** eux-mêmes. L'outil introduit volontairement de petites erreurs dans le code (par exemple remplacer un `+` par un `-`) et regarde si au moins un test échoue. Si rien ne casse, c'est que les tests ne couvraient pas vraiment ce comportement. Analogie : un inspecteur qui débranche discrètement un détecteur de fumée pour vérifier que l'alarme se déclenche.
+
 Aucun de ces outils ne remplace la rigueur humaine. Tous l'amplifient en transformant des règles écrites en vérifications automatiques et reproductibles.
 
 ### Pyramide d'outillage
+
+> **Que veut dire « analyse statique » et « couverture de tests » ?** L'*analyse statique* examine le code **sans l'exécuter** pour repérer des erreurs probables (un type incohérent, une variable jamais utilisée, un cas non géré), comme un correcteur orthographique lit un texte sans le jouer. La *couverture de tests* (en anglais *coverage*) mesure le pourcentage de lignes du code effectivement parcourues par les tests. Attention : une ligne parcourue n'est pas une ligne **vérifiée** ; on peut traverser du code sans rien affirmer dessus.
 
 | Niveau | Outil | Ce qu'il garantit | Coût d'intégration |
 |--------|-------|-------------------|--------------------|
@@ -1433,8 +1636,10 @@ Aucun de ces outils ne remplace la rigueur humaine. Tous l'amplifient en transfo
 
 ### Exemple de pipeline minimal en CI
 
+> **Que veut dire « pipeline » ?** Un *pipeline* (« chaîne de traitement ») est une suite d'étapes automatiques exécutées dans l'ordre, chacune ne démarrant que si la précédente a réussi : installer les dépendances, vérifier le style, lancer les tests, contrôler la sécurité. Comme une chaîne de montage, si une étape échoue, la chaîne s'arrête et signale le problème.
+
 ```yaml
-# .github/workflows/ci.yml — squelette représentatif
+# .github/workflows/ci.yml : squelette représentatif
 jobs:
   qualite:
     steps:
@@ -1449,7 +1654,9 @@ jobs:
 
 ### Lecture critique : les pièges classiques
 
-* **PHPStan niveau 8 du jour 1 sur une codebase héritée** = mur infranchissable. Mieux : commencer au niveau 0, ne jamais régresser, monter d'un cran par sprint.
+* **PHPStan niveau 8 du jour 1 sur une base de code héritée** = mur infranchissable. Mieux : commencer au niveau 0, ne jamais régresser, monter d'un cran par sprint.
+
+> **Que veut dire « code hérité » (legacy) et « sprint » ?** Le *code hérité* (en anglais *legacy*) est le code ancien dont on a hérité : il fonctionne et tourne en production, mais il est souvent peu testé et difficile à modifier sans risque. Un *sprint* est une période de travail courte et fixe (souvent une à deux semaines) au bout de laquelle l'équipe livre un incrément ; c'est un rythme issu des méthodes agiles.
 * **100 % de couverture** ne signifie pas 100 % de comportements vérifiés. Une assertion faible sur du code couvert masque un bug. *Coverage* est un *minimum nécessaire*, jamais un objectif suffisant.
 * **Rector appliqué sans tests** est un terrain de mines. C'est l'outil qui justifie le plus d'écrire des tests **avant** de l'utiliser.
 * **Linter trop strict** (200 règles activées) finit ignoré. Démarrer minimal, ajouter une règle quand l'équipe la juge utile.
@@ -1485,17 +1692,23 @@ Bénéfice : la connaissance se concentre dans le type, **toute fonction qui en 
 | **POC démo** pour une présentation client | La démo dure 20 minutes ; ce qui compte est le rendu. |
 | **Code de concours / katas** | Optimiser pour la performance ou la concision, pas pour l'évolutivité. |
 
+> **Que veut dire « POC », « notebook », « kata » ?** Un *POC* (*Proof Of Concept*, « preuve de concept ») est une maquette rapide servant à prouver qu'une idée est réalisable, sans viser la qualité finale. Un *notebook* (« carnet ») est un document interactif mêlant code et résultats, très utilisé en analyse de données, où l'on déroule un raisonnement de haut en bas. Un *kata* (terme emprunté aux arts martiaux) est un petit exercice de programmation répété pour s'entraîner ; le résultat n'a pas vocation à durer.
+
 **Piège classique :** un *spike* qu'on garde « juste pour cette fois ». La règle : si un code éphémère survit à sa raison d'être, ou s'il atterrit sur la branche principale, il **redevient** soumis aux exigences Clean Code, et il faut le refactoriser ou le réécrire.
 
 ### Code dont la lisibilité serait contre-productive
 
-* **Hot-path optimisé** : une boucle critique mesurée comme goulot peut justifier une forme moins lisible — `for` plutôt que `foreach` + `array_map`, mémoïsation manuelle, accès direct à un attribut. Le commentaire devient indispensable : il explique *pourquoi* on a sacrifié la lisibilité (et idéalement, le bench qui le justifie).
+> **Que veut dire « hot-path », « goulot », « mémoïsation », « bench » ?** Un *hot-path* (« chemin chaud ») est la portion de code exécutée extrêmement souvent, donc déterminante pour la vitesse globale. Un *goulot* (d'étranglement, en anglais *bottleneck*) est l'endroit précis qui ralentit tout le reste, comme le col d'une bouteille qui limite le débit. La *mémoïsation* consiste à retenir le résultat d'un calcul coûteux pour le ressortir au lieu de le refaire. Un *bench* (de *benchmark*) est une mesure chiffrée de performance qui sert de preuve avant d'optimiser.
+
+* **Hot-path optimisé** : une boucle critique mesurée comme goulot peut justifier une forme moins lisible (`for` plutôt que `foreach` + `array_map`, mémoïsation manuelle, accès direct à un attribut). Le commentaire devient indispensable : il explique *pourquoi* on a sacrifié la lisibilité (et idéalement, le bench qui le justifie).
 * **Algorithmes mathématiques** : une transformée de Fourier rapide ou un produit matriciel SIMD a une forme contrainte par les performances. Imposer des fonctions de 5 lignes y casse le regroupement logique. La lisibilité passe par les **commentaires** et les **références aux papiers**, pas par l'extraction.
-* **Code généré** (parser, ORM, gRPC, OpenAPI) : ne pas le toucher à la main. Les conventions Clean Code ne s'y appliquent pas — la source de vérité est ailleurs.
+* **Code généré** (parser, ORM, gRPC, OpenAPI) : ne pas le toucher à la main. Les conventions Clean Code ne s'y appliquent pas ; la source de vérité est ailleurs.
+
+> **Que veut dire « SIMD » et « gRPC » ?** *SIMD* (*Single Instruction, Multiple Data*) est une technique du processeur qui applique une même opération à plusieurs données d'un coup, pour aller plus vite (comme tamponner dix enveloppes en un seul geste). *gRPC* est un protocole de communication entre programmes, à partir duquel des outils **génèrent** automatiquement du code : on ne modifie pas ce code à la main, on régénère depuis la source.
 
 ### Code « assez bon » dans un contexte de contrainte
 
-Une équipe sous-staffée, un *deadline* contractuel, une startup en *pre-revenue* qui doit prouver l'idée avant la qualité. Dans ces contextes, **livrer un produit moyennement propre** vaut mieux que **ne pas livrer un produit parfait**. La dette est consciente, datée, et fait l'objet d'un ticket de remboursement. C'est le quadrant **prudent + délibéré** de la matrice Fowler (voir [Dette technique](#dette-technique)).
+Une équipe en sous-effectif, une échéance contractuelle (un *deadline*, la date limite imposée par contrat), une jeune entreprise qui n'a pas encore de chiffre d'affaires (en anglais *pre-revenue*) et doit prouver son idée avant de viser la qualité. Dans ces contextes, **livrer un produit moyennement propre** vaut mieux que **ne pas livrer un produit parfait**. La dette est consciente, datée, et fait l'objet d'un ticket de remboursement. C'est le quadrant **prudent + délibéré** de la matrice de Fowler (voir [Dette technique](#dette-technique)).
 
 ### Le test ultime
 
@@ -1505,7 +1718,7 @@ Avant de plaider l'exception, se poser trois questions :
 2. **Combien de personnes** différentes le maintiendront-elles ?
 3. **Quelle est la durée de vie raisonnable** du logiciel auquel il appartient ?
 
-Si les trois réponses pointent vers « peu », assouplir est légitime. Si l'une seulement pointe vers « beaucoup », appliquer Clean Code reste rentable. Et si on hésite, c'est généralement que l'investissement est rentable — l'incertitude joue contre le code sale.
+Si les trois réponses pointent vers « peu », assouplir est légitime. Si l'une seulement pointe vers « beaucoup », appliquer Clean Code reste rentable. Et si on hésite, c'est généralement que l'investissement est rentable : l'incertitude joue contre le code sale.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
@@ -1513,7 +1726,9 @@ Si les trois réponses pointent vers « peu », assouplir est légitime. Si l'un
 
 Trois maximes qui poussent dans la même direction : **ne pas écrire ce qui n'est pas nécessaire**.
 
-### KISS — *Keep It Simple, Stupid*
+### KISS : *Keep It Simple, Stupid*
+
+> **Que veut dire « KISS » ?** *KISS* signifie *Keep It Simple, Stupid* (« reste simple, idiot »). C'est un rappel à choisir la solution la plus simple qui répond au besoin **d'aujourd'hui**, plutôt qu'une usine à gaz qui anticipe des besoins imaginaires. Plus une mécanique est simple, moins elle tombe en panne et plus elle est facile à comprendre.
 
 Adage attribué à l'ingénieur Kelly Johnson dans les années 1960. La solution la plus simple qui résout le problème **actuel** est presque toujours la bonne. Une abstraction supplémentaire est un pari sur l'avenir, et la plupart des paris perdent.
 
@@ -1529,9 +1744,13 @@ $remise = match ($commande->type()) {
 };
 ```
 
+> **Que veut dire « design pattern » (Strategy, Factory, Registry) ?** Un *design pattern* (« patron de conception ») est une solution type, reconnue et réutilisable, à un problème d'organisation du code. *Strategy* permet d'échanger un algorithme à la volée, *Factory* centralise la création d'objets, *Registry* tient un annuaire d'objets accessibles globalement. Ce sont des outils utiles, mais les empiler pour un cas trivial (ici deux possibilités) est l'exemple même d'une complexité gratuite que KISS condamne.
+
 L'extraction sera triviale **le jour où** un troisième cas apparaît, et probablement mieux conçue car informée par trois cas réels au lieu de deux imaginaires.
 
-### YAGNI — *You Aren't Gonna Need It*
+### YAGNI : *You Aren't Gonna Need It*
+
+> **Que veut dire « YAGNI » et « XP » ?** *YAGNI* signifie *You Aren't Gonna Need It* (« vous n'en aurez pas besoin »). C'est l'invitation à ne pas coder une fonctionnalité tant qu'un besoin réel ne l'exige pas, car on devine mal l'avenir et toute option ajoutée coûte à entretenir. *XP* abrège *Extreme Programming* (« programmation extrême »), une méthode de développement agile qui pousse à l'extrême quelques bonnes pratiques (tests, binômes, livraisons fréquentes), et d'où vient ce principe.
 
 Formulé par Ron Jeffries dans le contexte XP. Trois raisons de ne pas anticiper :
 
@@ -1555,7 +1774,11 @@ public function calculerTotal(Commande $commande): Montant { /* ... */ }
 
 ### Optimisation prématurée
 
-> *« L'optimisation prématurée est la racine de tous les maux. »* — Donald Knuth
+> **Que veut dire « optimisation prématurée » ?** *Optimiser* du code, c'est le rendre plus rapide ou plus économe. C'est *prématuré* quand on le fait **avant d'avoir mesuré** où se trouve réellement la lenteur : on complique le code pour un gain souvent inexistant. La phrase de Knuth résume le danger : on devine très mal d'où vient la lenteur, et on sacrifie la lisibilité pour rien.
+
+> *« L'optimisation prématurée est la racine de tous les maux. »* (Donald Knuth)
+
+> **Que veut dire « profiling » et « SLA » ?** Le *profiling* (« profilage ») consiste à mesurer où le programme passe réellement son temps, à l'aide d'outils dédiés, afin d'identifier le vrai goulot avant d'optimiser. Un *SLA* (*Service Level Agreement*, « accord de niveau de service ») est un engagement chiffré sur la qualité d'un service, par exemple « 99 % des pages répondent en moins de 300 millisecondes » ; il indique objectivement quand « c'est trop lent ».
 
 L'optimisation prématurée n'est pas « faire attention aux performances » ; c'est **tordre le code pour un gain non mesuré**. La discipline :
 
@@ -1569,7 +1792,9 @@ Le bon moment pour optimiser, c'est quand un test de performance, un SLA ou un u
 
 ## Dette technique
 
-Métaphore de Ward Cunningham (1992) : un raccourci de conception est un emprunt — il rend service maintenant et coûte plus cher demain. La dette n'est pas honteuse : c'est un outil, à condition de la connaître et de la rembourser.
+> **Que veut dire « dette technique » ?** La *dette technique* est l'image qui compare un raccourci pris dans le code à un emprunt d'argent : il rend service tout de suite (on livre plus vite), mais il se rembourse plus tard avec des « intérêts » (le code devient plus dur à modifier). Comme une dette financière, elle n'est pas mauvaise en soi : elle devient dangereuse quand on l'ignore et qu'elle s'accumule sans plan de remboursement.
+
+Métaphore de Ward Cunningham (1992) : un raccourci de conception est un emprunt qui rend service maintenant et coûte plus cher demain. La dette n'est pas honteuse : c'est un outil, à condition de la connaître et de la rembourser.
 
 ### Quatre quadrants de Martin Fowler
 
@@ -1588,14 +1813,18 @@ Seul le quadrant *prudent + délibéré* est sain : la dette est un choix éclai
 * Personne n'ose toucher à un module crucial.
 * Les tests sont régulièrement désactivés « parce qu'ils sont flaky ».
 
+> **Que veut dire « flaky » ?** Un test *flaky* (« instable ») passe parfois et échoue parfois sans qu'on ait rien changé au code, souvent à cause d'un facteur incontrôlé (l'heure, l'ordre d'exécution, le réseau). Pire que pas de test : il use la confiance, et l'équipe finit par ignorer ses alertes, y compris les vraies.
+
 ### Stratégies de remboursement
 
 | Stratégie | Quand l'employer |
 |-----------|------------------|
 | **Boy scout rule** | Refactoriser à la marge chaque fichier touché par une feature. Indolore, continu. |
-| **Refactoring planifié** | Bloquer 10–20 % du temps de sprint pour des refactorings ciblés. |
+| **Refactoring planifié** | Bloquer 10 à 20 % du temps de sprint pour des refactorings ciblés. |
 | **Strangler Fig pattern** | Remplacer un module hérité morceau par morceau, sans big bang. |
 | **Réécriture totale** | Dernier recours. Coûteuse, risquée, longtemps non livrable. À justifier. |
+
+> **Que veut dire « Strangler Fig » et « big bang » ?** Le *Strangler Fig pattern* (« motif du figuier étrangleur ») tire son nom d'une plante qui pousse autour d'un arbre et finit par le remplacer. En code, on entoure peu à peu l'ancien système d'un nouveau qui reprend ses fonctions une par une, jusqu'à pouvoir retirer l'ancien sans coupure. À l'inverse, un remplacement *big bang* (« grand boum ») bascule tout d'un coup vers le nouveau système : spectaculaire, mais très risqué car on découvre tous les problèmes en même temps.
 
 ### Tracer la dette
 
@@ -1603,17 +1832,17 @@ Une dette invisible n'est pas remboursée. Outils utiles :
 
 * Tickets « TECH-DEBT » étiquetés dans le suivi.
 * Fichier `ARCHITECTURE.md` ou *Architecture Decision Records* (ADR) qui documentent les compromis.
-* Indicateurs : couverture de tests, complexité cyclomatique, durée moyenne d'une PR — tous suivis dans le temps.
+* Indicateurs : couverture de tests, complexité cyclomatique, durée moyenne d'une PR, tous suivis dans le temps.
 
 [🔝 Retour en haut de page](#table-des-matières)
 
 ## Pour aller plus loin
 
-- *Clean Code: A Handbook of Agile Software Craftsmanship* — Robert C. Martin
-- *The Clean Coder: A Code of Conduct for Professional Programmers* — Robert C. Martin
-- *Refactoring: Improving the Design of Existing Code* (2e éd.) — Martin Fowler
-- *Clean Architecture* — Robert C. Martin
-- [Refactoring Guru — Code smells](https://refactoring.guru/refactoring/smells)
+- *Clean Code: A Handbook of Agile Software Craftsmanship*, Robert C. Martin
+- *The Clean Coder: A Code of Conduct for Professional Programmers*, Robert C. Martin
+- *Refactoring: Improving the Design of Existing Code* (2e éd.), Martin Fowler
+- *Clean Architecture*, Robert C. Martin
+- [Refactoring Guru : Code smells](https://refactoring.guru/refactoring/smells)
 - [PHP The Right Way](https://phptherightway.com/)
 - [PSR coding standards (PHP-FIG)](https://www.php-fig.org/psr/)
 
